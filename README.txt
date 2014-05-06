@@ -9,3 +9,6 @@ Basic workflow
 	Run "make" in the appropriate test program directory to compile your test code to a MIPS executable.
 	Go to the sim directory and run "make" to compile your simulator
 	Run "./sim ../test_program_dir/input_file.elf" (using the appropriate input file name) to launch the simulation.
+
+Basic workflow max version
+	run ./rum_asm_test.sh or ./run_c_test.sh these will make the .elf, the sim and run the sim with the given .elf
