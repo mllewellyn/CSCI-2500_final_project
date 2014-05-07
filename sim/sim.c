@@ -80,7 +80,7 @@ void StoreWordToVirtualMemory(uint32_t address, uint32_t value, struct virtual_m
 	3 I type
 	4 J type
 */
-int determineInstType(int opcode) {
+int determineInstType(union mips_instruction* inst) {
 	if(inst->word == 12) {
 		//syscall
 		return 1;
@@ -116,7 +116,6 @@ void RunSimulator(struct virtual_mem_region* memory, struct context* ctx)
 
 void printInstBits(union mips_instruction* inst) {
 	uint32_t inst_word = inst->word;
-	int opcode = inst->rtype.opcode;
 	printf("DEBUG inst: ");
 	int i;
 	uint32_t reversed = 0;
@@ -125,16 +124,16 @@ void printInstBits(union mips_instruction* inst) {
 		reversed += (inst_word%2)<<(sizeof(inst_word)*8-i-1);
 		inst_word = inst_word>>1;
 	}
-	int type = determineInstType(opcode);
+	int type = determineInstType(inst);
 	for(i=0; i<sizeof(reversed)*8; ++i) {
 		printf("%d", reversed%2);
 		reversed = reversed>>1;
 		//add spacing so it's easier to read, first check for R type
-		if(type!=1 ((type == 2 && (i==31-5 || i==31-10 || i==31-15 || i==31-20 || i==31-25)) ||
+		if(type != 1 && ((type == 2 && (i==31-5 || i==31-10 || i==31-15 || i==31-20 || i==31-25)) ||
 			//check for only J type
 			(type == 4 && i==31-25) ||
 			//all other are I type
-			(type != 3 && opcode != OP_JAL && (i==31-15 || i==31-20 || i==31-25)))) {
+			(type != 3 && (i==31-15 || i==31-20 || i==31-25)))) {
 			printf(" ");
 		}
 	}
@@ -142,7 +141,7 @@ void printInstBits(union mips_instruction* inst) {
 }
 
 void printInstHex(union mips_instruction* inst) {
-	int type = determineInstType(opcode);
+	int type = determineInstType(inst);
 	//check for syscall
 	if(type == 1) {
 		printf("DEBUG syscall\n");
@@ -180,12 +179,13 @@ void printInstHex(union mips_instruction* inst) {
 int SimulateInstruction(union mips_instruction* inst, struct virtual_mem_region* memory, struct context* ctx)
 {
 	//print the instruction so we know what hte heck we're supposed to be doing
-	printInstBits(inst);
+	printf("(%X) ", ctx->pc);
+	// printInstBits(inst);
 	printInstHex(inst);
 
 	//do some switching
 	int result;
-	int type = determineInstType(opcode);
+	int type = determineInstType(inst);
 	if(type == 1) {
 		result = SimulateSyscall(ctx->regs[2], memory, ctx);
 	} else if(type == 2) {
@@ -260,7 +260,7 @@ int SimulateJtypeInstruction(union mips_instruction* inst, struct virtual_mem_re
 			ctx->regs[ra] = ctx->pc+8;
 			ctx->pc = inst->jtype.addr+8-4;
 			break;
-		case deafult:
+		default:
 			printf("GOT A BAD/UNIMPLIMENTED J TYPE INSTRUCITON\n");
 			return 0;
 	}
