@@ -88,6 +88,33 @@ void RunSimulator(struct virtual_mem_region* memory, struct context* ctx)
 	}
 }
 
+void printIns(union mips_instruction* inst) {
+	uint32_t inst_word = inst->word;
+	int opcode = inst->rtype.opcode;
+	printf("DEBUG inst: ");
+	int i;
+	uint32_t reversed = 0;
+	//because I'm really freaking lazy
+	for(i=0; i<sizeof(inst_word)*8; ++i) {
+		reversed += (inst_word%2)<<(sizeof(inst_word)*8-i-1);
+		inst_word = inst_word>>1;
+	}
+
+	for(i=0; i<sizeof(reversed)*8; ++i) {
+		printf("%d", reversed%2);
+		reversed = reversed>>1;
+		//add spacing so it's easier to read, first check for R type
+		if((opcode == OP_RTYPE && (i==31-5 || i==31-10 || i==31-15 || i==31-20 || i==31-25)) ||
+			//check for only J type
+			(opcode == OP_JAL && i==31-25) ||
+			//all other are I type
+			(opcode != OP_RTYPE && opcode != OP_JAL && (i==31-15 || i==31-20 || i==31-25))) {
+			printf(" ");
+		}
+	}
+	printf("\n");
+}
+
 /**
 	@brief Simulates a single instruction
 	
@@ -96,6 +123,7 @@ void RunSimulator(struct virtual_mem_region* memory, struct context* ctx)
 int SimulateInstruction(union mips_instruction* inst, struct virtual_mem_region* memory, struct context* ctx)
 {
 	//TODO: print what the hell is going on 
+	printIns(inst);
 
 	//TODO: Switch on opcode, if R-type instruction call SimulateRTypeInstruction()
 	//otherwise it's I/J type
