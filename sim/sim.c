@@ -73,6 +73,32 @@ void StoreWordToVirtualMemory(uint32_t address, uint32_t value, struct virtual_m
 }
 
 /**
+	returns int based on what type of instruction it is
+	0 error
+	1 syscall
+	2 R type
+	3 I type
+	4 J type
+*/
+int determineInstType(int opcode) {
+	if(inst->word == 12) {
+		//syscall
+		return 1;
+	} else if(inst->rtype.opcode == OP_RTYPE) {
+		// r type
+		return 2;
+	} else if(4 <= inst->itype.opcode && inst->itype.opcode <= 43) {
+		// i type
+		return 3;
+	} else if(2 <= inst->rtype.opcode && inst->rtype.opcode <= 3) {
+		// j type
+		return 4;
+	} else {
+		return 0;
+	}
+}
+
+/**
 	@brief Runs the actual simulation
  */
 void RunSimulator(struct virtual_mem_region* memory, struct context* ctx)
@@ -99,16 +125,16 @@ void printInstBits(union mips_instruction* inst) {
 		reversed += (inst_word%2)<<(sizeof(inst_word)*8-i-1);
 		inst_word = inst_word>>1;
 	}
-
+	int type = determineInstType(opcode);
 	for(i=0; i<sizeof(reversed)*8; ++i) {
 		printf("%d", reversed%2);
 		reversed = reversed>>1;
 		//add spacing so it's easier to read, first check for R type
-		if(inst->word != 12 && ((opcode == OP_RTYPE && (i==31-5 || i==31-10 || i==31-15 || i==31-20 || i==31-25)) ||
+		if(type!=1 ((type == 2 && (i==31-5 || i==31-10 || i==31-15 || i==31-20 || i==31-25)) ||
 			//check for only J type
-			(opcode == OP_JAL && i==31-25) ||
+			(type == 4 && i==31-25) ||
 			//all other are I type
-			(opcode != OP_RTYPE && opcode != OP_JAL && (i==31-15 || i==31-20 || i==31-25)))) {
+			(type != 3 && opcode != OP_JAL && (i==31-15 || i==31-20 || i==31-25)))) {
 			printf(" ");
 		}
 	}
@@ -116,13 +142,13 @@ void printInstBits(union mips_instruction* inst) {
 }
 
 void printInstHex(union mips_instruction* inst) {
+	int type = determineInstType(opcode);
 	//check for syscall
-	if(inst->word == 12) {
+	if(type == 1) {
 		printf("DEBUG syscall\n");
 		return;
-	}
 	// R type
-	if(inst->rtype.opcode == OP_RTYPE) {
+	} else if(type == 2) {
 		printf("DEBUG R type ");
 		printf("opcode:0x%X ",inst->rtype.opcode);
 		printf("rs:0x%X ",inst->rtype.rs);
@@ -131,12 +157,12 @@ void printInstHex(union mips_instruction* inst) {
 		printf("shamt:0x%X ",inst->rtype.shamt);
 		printf("func:0x%X",inst->rtype.func);
 	// only J type to check for
-	} else if(inst->jtype.opcode == OP_JAL) {
+	} else if(type == 3) {
 		printf("DEBUG J type ");
 		printf("opcode:0x%X ", inst->jtype.opcode);
 		printf("addr:0x%X ", inst->jtype.addr);
 	// not R type or the only J type, must be I type, could also do or on I types but lazy
-	} else if(inst->rtype.opcode != OP_RTYPE && inst->itype.opcode != OP_JAL) {
+	} else if(type == 4) {
 		printf("DEBUG I type ");
 		printf("opcode:0x%X ", inst->itype.opcode);
 		printf("rs:0x%X ", inst->itype.rs);
@@ -154,21 +180,25 @@ void printInstHex(union mips_instruction* inst) {
 int SimulateInstruction(union mips_instruction* inst, struct virtual_mem_region* memory, struct context* ctx)
 {
 	//print the instruction so we know what hte heck we're supposed to be doing
-	// printInstBits(inst);
+	printInstBits(inst);
 	printInstHex(inst);
+
+	//do some switching
 	int result;
-	if(inst->word == 12) {
+	int type = determineInstType(opcode);
+	if(type == 1) {
 		result = SimulateSyscall(ctx->regs[2], memory, ctx);
-	} else if(inst->rtype.opcode == OP_RTYPE) {
+	} else if(type == 2) {
 		result = SimulateRtypeInstruction(inst, memory, ctx);
 	// not R type or the only J type, must be I type, could also do or on I types but lazy
-	} else if(inst->rtype.opcode != OP_RTYPE && inst->itype.opcode != OP_JAL) {
+	} else if(type == 3) {
 		result = SimulateItypeInstruction(inst, memory, ctx);
 	// check for j type
-	} else if(inst->jtype.opcode == OP_JAL) {
+	} else if(type == 4) {
 		result = SimulateJtypeInstruction(inst, memory, ctx);
-		//do something fancy with jumps, don't worry about it now
-		ctx->pc += 4;
+	} else {
+		printf("Couldn't find the type of instruction THIS IS AN ERROR, exiting");
+		return 0;
 	}
 	//for now I'm feeling lazy and this always gets bumped by 4, to jump just remember to decrement by 4
 	ctx->pc += 4;
@@ -180,9 +210,10 @@ int SimulateRtypeInstruction(union mips_instruction* inst, struct virtual_mem_re
 	//instructions to impliment 
 	// R ALU: ADD, ADDU, AND, OR, SUB, SUBU, XOR, SLT, SLTI, SLTIU, SLTU, SLL, SLLV, SRA, SRL, SRLV, DIV, DIVU, MULT, MULTU
 	// R move: MFHI, MFLO
+	// R jump: JR
 	switch(inst->rtype.opcode) {
 		default:
-			printf("GOT A BAD R TYPE INSTRUCIONT");
+			printf("GOT A BAD/UNIMPLIMENTED R TYPE INSTRUCIONT\n");
 			return 0; //return this to exit program
 	}
 
@@ -201,15 +232,18 @@ int SimulateItypeInstruction(union mips_instruction* inst, struct virtual_mem_re
 			break;
 		case OP_LUI:
 
-			break;
-		case OP_LW:
-
-			break;
+			// break;
+		case OP_LW: // R[rt] = M[R[rs]+SignExtImm]
+			// THIS IS NOT WORKING YET, WEIRD LABEL SHIT
+			// printf("DEBUG SP addr:0x%X\n", ctx->regs[sp]);
+			// printf("DEBUG MEM TARGET:0x%X\n", ctx->regs[inst->itype.rs] + inst->itype.imm + ctx->regs[sp]);
+			// ctx->regs[inst->itype.rt] = FetchWordFromVirtualMemory(ctx->regs[inst->itype.rs] + inst->itype.imm + ctx->regs[sp], memory);
+			// break;
 		case OP_SW:
 
-			break;
+			// break; //removing break until implimented
 		default:
-			printf("GOT A BAD I TYPE INSTRUCITON");
+			printf("GOT A BAD/UNIMPLIMENTED I TYPE INSTRUCITON\n");
 			return 0; //return this to exit program
 	}
 	return 1;
@@ -217,9 +251,19 @@ int SimulateItypeInstruction(union mips_instruction* inst, struct virtual_mem_re
 
 int SimulateJtypeInstruction(union mips_instruction* inst, struct virtual_mem_region* memory, struct context* ctx)
 {
-	//do some weird shit, not sure how pc reg is gonna work yet
+	// remember ctx->pc is always bumped by 4 at the end of the simulate function, so some gettoh may be required bc I'm lazy
+
 	// instructions to impliment
-	// J jump: J, JAL, JR
+	// J jump: J, JAL
+	switch(inst->jtype.opcode) {
+		case OP_JAL: //R[ra]=PC+8;PC=JumpAddr
+			ctx->regs[ra] = ctx->pc+8;
+			ctx->pc = inst->jtype.addr+8-4;
+			break;
+		case deafult:
+			printf("GOT A BAD/UNIMPLIMENTED J TYPE INSTRUCITON\n");
+			return 0;
+	}
 	return 1;
 }
 
@@ -231,7 +275,7 @@ int SimulateSyscall(uint32_t callnum, struct virtual_mem_region* memory, struct 
 			return 0;
 			break;
 		default:
-			printf("GOT A BAD SYSCALL");
+			printf("GOT A BAD/UNIMPLIMENTED SYSCALL\n");
 			return 0;
 	}
 	return 1;

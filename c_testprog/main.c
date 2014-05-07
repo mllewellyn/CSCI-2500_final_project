@@ -16,7 +16,8 @@ enum syscalls
 
 int main()
 {
-	const char* str = "hello world\n";
+	// const char* str = "hello world\n";
+	printf("hello world");
 	do_syscall((unsigned int)str, 0, SYS_PRINT_STR);
 	
 	return 0;

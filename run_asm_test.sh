@@ -1,7 +1,7 @@
 echo "Making files"
 make -C asm_testprog/
 # this is the easy way to compile all other test cases
-find asm_testprog/uni_pacific_test_cases/ -name "*.S" -exec mipsel-linux-gnu-gcc {} -o {}.elf -nostdlib -nostartfiles -fno-delayed-branch \;
+find asm_testprog/uni_pacific_test_cases/ -name "*.S" -exec mipsel-linux-gnu-gcc {} -o {}.elf -mmemcpy -nostdlib -nostartfiles -fno-delayed-branch \;
 make -C sim/
 echo ""
 echo "running test"
