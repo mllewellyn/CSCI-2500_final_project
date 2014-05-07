@@ -90,7 +90,7 @@ int determineInstType(union mips_instruction* inst) {
 	} else if(4 <= inst->itype.opcode && inst->itype.opcode <= 43) {
 		// i type
 		return 3;
-	} else if(2 <= inst->rtype.opcode && inst->rtype.opcode <= 3) {
+	} else if(2 <= inst->jtype.opcode && inst->jtype.opcode <= 3) {
 		// j type
 		return 4;
 	} else {
@@ -108,6 +108,8 @@ void RunSimulator(struct virtual_mem_region* memory, struct context* ctx)
 	union mips_instruction inst;
 	while(1)
 	{
+		//print pc counter for debugging
+		printf("(%X) ", ctx->pc);
 		inst.word = FetchWordFromVirtualMemory(ctx->pc, memory);
 		if(!SimulateInstruction(&inst, memory, ctx))
 			break;		
@@ -155,18 +157,18 @@ void printInstHex(union mips_instruction* inst) {
 		printf("rd:0x%X ",inst->rtype.rd);
 		printf("shamt:0x%X ",inst->rtype.shamt);
 		printf("func:0x%X",inst->rtype.func);
-	// only J type to check for
+	// I type
 	} else if(type == 3) {
-		printf("DEBUG J type ");
-		printf("opcode:0x%X ", inst->jtype.opcode);
-		printf("addr:0x%X ", inst->jtype.addr);
-	// not R type or the only J type, must be I type, could also do or on I types but lazy
-	} else if(type == 4) {
 		printf("DEBUG I type ");
 		printf("opcode:0x%X ", inst->itype.opcode);
 		printf("rs:0x%X ", inst->itype.rs);
 		printf("rt:0x%X ", inst->itype.rt);
 		printf("imm:0x%X", inst->itype.imm);
+	// J type
+	} else if(type == 4) {
+		printf("DEBUG J type ");
+		printf("opcode:0x%X ", inst->jtype.opcode);
+		printf("addr:0x%X ", inst->jtype.addr);
 	}
 	printf("\n");
 }
@@ -179,7 +181,6 @@ void printInstHex(union mips_instruction* inst) {
 int SimulateInstruction(union mips_instruction* inst, struct virtual_mem_region* memory, struct context* ctx)
 {
 	//print the instruction so we know what hte heck we're supposed to be doing
-	printf("(%X) ", ctx->pc);
 	// printInstBits(inst);
 	printInstHex(inst);
 
@@ -211,7 +212,7 @@ int SimulateRtypeInstruction(union mips_instruction* inst, struct virtual_mem_re
 	// R ALU: ADD, ADDU, AND, OR, SUB, SUBU, XOR, SLT, SLTI, SLTIU, SLTU, SLL, SLLV, SRA, SRL, SRLV, DIV, DIVU, MULT, MULTU
 	// R move: MFHI, MFLO
 	// R jump: JR
-	switch(inst->rtype.opcode) {
+	switch(inst->rtype.opcode) {	
 		default:
 			printf("GOT A BAD/UNIMPLIMENTED R TYPE INSTRUCIONT\n");
 			return 0; //return this to exit program
@@ -258,7 +259,7 @@ int SimulateJtypeInstruction(union mips_instruction* inst, struct virtual_mem_re
 	switch(inst->jtype.opcode) {
 		case OP_JAL: //R[ra]=PC+8;PC=JumpAddr
 			ctx->regs[ra] = ctx->pc+8;
-			ctx->pc = inst->jtype.addr+8-4;
+			ctx->pc = inst->jtype.addr-4;
 			break;
 		default:
 			printf("GOT A BAD/UNIMPLIMENTED J TYPE INSTRUCITON\n");
