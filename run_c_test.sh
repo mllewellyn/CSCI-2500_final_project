@@ -4,4 +4,4 @@ make -C asm_testprog/
 make -C sim/
 echo ""
 echo "running test"
-./sim/sim c_testprog/c_testprog.elf
+./sim/sim.out c_testprog/c_testprog.elf

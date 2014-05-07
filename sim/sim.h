@@ -107,6 +107,7 @@ struct virtual_mem_region
 struct context
 {
 	uint32_t pc;
+	///might add HI and LO, special mem addr for mult
 	uint32_t regs[32];
 };
 

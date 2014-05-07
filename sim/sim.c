@@ -95,6 +95,8 @@ void RunSimulator(struct virtual_mem_region* memory, struct context* ctx)
  */
 int SimulateInstruction(union mips_instruction* inst, struct virtual_mem_region* memory, struct context* ctx)
 {
+	//TODO: print what the hell is going on 
+
 	//TODO: Switch on opcode, if R-type instruction call SimulateRTypeInstruction()
 	//otherwise it's I/J type
 	
