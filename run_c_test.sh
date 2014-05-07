@@ -1,5 +1,5 @@
 echo "Making files"
-if make -C asm_testprog/ ; then
+if make -C c_testprog/ ; then
 	# make -C sim/
 	if make -C sim/ ; then
 		echo -e "\nrunning test"
