@@ -164,30 +164,37 @@ int SimulateInstruction(union mips_instruction* inst, struct virtual_mem_region*
 	// not R type or the only J type, must be I type, could also do or on I types but lazy
 	} else if(inst->rtype.opcode != OP_RTYPE && inst->itype.opcode != OP_JAL) {
 		result = SimulateItypeInstruction(inst, memory, ctx);
-	}
 	// check for j type
-	if(inst->jtype.opcode == OP_JAL) {
+	} else if(inst->jtype.opcode == OP_JAL) {
 		result = SimulateJtypeInstruction(inst, memory, ctx);
 		//do something fancy with jumps, don't worry about it now
 		ctx->pc += 4;
-	} else { //go on to next instruciton by default
-		ctx->pc += 4;		
 	}
+	//for now I'm feeling lazy and this always gets bumped by 4, to jump just remember to decrement by 4
+	ctx->pc += 4;
 	return result;
 }
 
 int SimulateRtypeInstruction(union mips_instruction* inst, struct virtual_mem_region* memory, struct context* ctx)
 {
-	//TODO: switch on func, if syscall call SimulateSyscall()
-	//else process instruction normally
-	
+	//instructions to impliment 
+	// R ALU: ADD, ADDU, AND, OR, SUB, SUBU, XOR, SLT, SLTI, SLTIU, SLTU, SLL, SLLV, SRA, SRL, SRLV, DIV, DIVU, MULT, MULTU
+	// R move: MFHI, MFLO
+	switch(inst->rtype.opcode) {
+		default:
+			printf("GOT A BAD R TYPE INSTRUCIONT");
+			return 0; //return this to exit program
+	}
+
 	return 1;
 }
 
 int SimulateItypeInstruction(union mips_instruction* inst, struct virtual_mem_region* memory, struct context* ctx)
 {
-	//TODO: switch on func, if syscall call SimulateSyscall()
-	//else process instruction normally
+	// instructions to impliment
+	// I ALU: ADDI, ADDIU, ANDI, LUI, ORI, XORI
+	// I branch: BEQ, BGEZ, BGTZ, BLEZ, BLTZ, BNE, BGEZAL, BLTZAL
+	// I load/store: LB, LW, SB, SW
 	switch(inst->itype.opcode) {
 		case OP_ADDIU:	//R[rt] = R[rs] + SignExtImm
 			ctx->regs[inst->itype.rt] = ctx->regs[inst->itype.rs] + inst->itype.imm;
@@ -211,6 +218,8 @@ int SimulateItypeInstruction(union mips_instruction* inst, struct virtual_mem_re
 int SimulateJtypeInstruction(union mips_instruction* inst, struct virtual_mem_region* memory, struct context* ctx)
 {
 	//do some weird shit, not sure how pc reg is gonna work yet
+	// instructions to impliment
+	// J jump: J, JAL, JR
 	return 1;
 }
 
