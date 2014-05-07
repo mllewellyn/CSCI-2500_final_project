@@ -1,7 +1,12 @@
-echo "making files"
-make -C c_testprog/
-make -C asm_testprog/
-make -C sim/
-echo ""
-echo "running test"
-./sim/sim.out c_testprog/c_testprog.elf
+echo "Making files"
+if make -C asm_testprog/ ; then
+	# make -C sim/
+	if make -C sim/ ; then
+		echo -e "\nrunning test"
+		./sim/sim.out c_testprog/c_testprog.elf
+	else
+		echo -e "\nSIM compile failed"
+	fi
+else
+	echo -e "\n C test program failed"
+fi
