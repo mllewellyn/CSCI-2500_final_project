@@ -113,6 +113,7 @@ struct context
 
 enum mips_regids
 {
+	//because I'm gonna forget and get confused, they are automatically assigned values
 	zero,
 	at,
 	v0, v1,
@@ -141,6 +142,8 @@ void StoreWordToVirtualMemory(uint32_t address, uint32_t value, struct virtual_m
 
 int SimulateInstruction(union mips_instruction* inst, struct virtual_mem_region* memory, struct context* ctx);
 int SimulateRtypeInstruction(union mips_instruction* inst, struct virtual_mem_region* memory, struct context* ctx);
+int SimulateItypeInstruction(union mips_instruction* inst, struct virtual_mem_region* memory, struct context* ctx);
+int SimulateJtypeInstruction(union mips_instruction* inst, struct virtual_mem_region* memory, struct context* ctx);
 int SimulateSyscall(uint32_t callnum, struct virtual_mem_region* memory, struct context* ctx);
 
 #endif
