@@ -201,8 +201,6 @@ int SimulateInstruction(union mips_instruction* inst, struct virtual_mem_region*
 		printf("Couldn't find the type of instruction THIS IS AN ERROR, exiting");
 		return 0;
 	}
-	//for now I'm feeling lazy and this always gets bumped by 4, to jump just remember to decrement by 4 whenever you jump
-	ctx->pc += 4;
 	return result;
 }
 
@@ -247,6 +245,7 @@ int SimulateItypeInstruction(union mips_instruction* inst, struct virtual_mem_re
 			printf("GOT A BAD/UNIMPLIMENTED I TYPE INSTRUCITON\n");
 			return 0; //return this to exit program
 	}
+	ctx->pc += 4;
 	return 1;
 }
 
@@ -259,12 +258,14 @@ int SimulateJtypeInstruction(union mips_instruction* inst, struct virtual_mem_re
 	switch(inst->jtype.opcode) {
 		case OP_JAL: //R[ra]=PC+8;PC=JumpAddr
 			ctx->regs[ra] = ctx->pc+8;
-			ctx->pc = inst->jtype.addr-4; //-4 is because pc counter is lazy incremented by 4 at the end of SimulateInstruction
-			break;
+			ctx->pc = inst->jtype.addr; //-4 is because pc counter is lazy incremented by 4 at the end of SimulateInstruction
+			return 1; // early return to prevent cp+=4
+			break; // just for style
 		default:
 			printf("GOT A BAD/UNIMPLIMENTED J TYPE INSTRUCITON\n");
 			return 0;
 	}
+	ctx->pc += 4;
 	return 1;
 }
 
@@ -279,5 +280,6 @@ int SimulateSyscall(uint32_t callnum, struct virtual_mem_region* memory, struct 
 			printf("GOT A BAD/UNIMPLIMENTED SYSCALL\n");
 			return 0;
 	}
+	ctx->pc += 4;
 	return 1;
 }
