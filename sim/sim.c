@@ -212,7 +212,7 @@ int SimulateRtypeInstruction(union mips_instruction* inst, struct virtual_mem_re
 	// R ALU: ADD, ADDU, AND, OR, SUB, SUBU, XOR, SLT, SLTI, SLTIU, SLTU, SLL, SLLV, SRA, SRL, SRLV, DIV, DIVU, MULT, MULTU
 	// R move: MFHI, MFLO
 	// R jump: JR
-	switch(inst->rtype.opcode) {	
+	switch(inst->rtype.func) {	
 		default:
 			printf("GOT A BAD/UNIMPLIMENTED R TYPE INSTRUCIONT\n");
 			return 0; //return this to exit program
