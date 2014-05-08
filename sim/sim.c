@@ -227,7 +227,7 @@ int SimulateRtypeInstruction(union mips_instruction* inst, struct virtual_mem_re
 			printf("GOT A BAD/UNIMPLIMENTED R TYPE INSTRUCIONT\n");
 			return 0; //return this to exit program
 	}
-
+	ctx->pc += 4;
 	return 1;
 }
 
