@@ -270,8 +270,8 @@ int SimulateJtypeInstruction(union mips_instruction* inst, struct virtual_mem_re
 	switch(inst->jtype.opcode) {
 		case OP_JAL: //R[ra]=PC+8;PC=JumpAddr
 			ctx->regs[ra] = ctx->pc+8;
-			ctx->pc = inst->jtype.addr; //-4 is because pc counter is lazy incremented by 4 at the end of SimulateInstruction
-			return 1; // early return to prevent cp+=4
+			ctx->pc = inst->jtype.addr;
+			return 1; // early return to prevent pc+=4
 			break; // just for style
 		default:
 			printf("GOT A BAD/UNIMPLIMENTED J TYPE INSTRUCITON\n");
