@@ -91,7 +91,7 @@ void ReadELF(const char* fname, struct virtual_mem_region** memory, struct conte
 	}
 	
 	//Save the entry point address
-	printf("    Virtual address of entry point is %08x\n", hdr.e_entry);
+	printf("    Virtual address of entry point is 0x%x\n", hdr.e_entry); // was "...point is %08x\n..." now "...point is 0x%x\n..."
 	ctx->pc = hdr.e_entry;
 	
 	//Read the program headers
@@ -153,7 +153,45 @@ void ReadELF(const char* fname, struct virtual_mem_region** memory, struct conte
 			exit(1);
 		}
 	}
-	
+
+	//ignore all that for now, I'm gonna set up reading the .data section because I want to later, but that's after this works great
+	/*// Things Max is adding because I want them
+	//Read the section headers
+	if(0 != fseek(fp, hdr.e_shoff, SEEK_SET))
+	{
+		printf("fail to seek to section headers\n");
+		exit(1);
+	}
+	if(hdr.e_shentsize != sizeof(Elf32_Shdr))
+	{
+		printf("invalid shentsize\n");
+		exit(1);
+	}
+	char* sect_names = NULL;
+	sect_names = malloc(hdr.e_shentsize);
+	//read the section, string data ???
+	fread(sect_names, 1, hdr.e_shoff, fp);
+	//find the .data section header
+	int i;
+	for(i=0; i<hdr.e_shnum; i++)
+	{
+		Elf32_Shdr shdr;
+		fseek(fp, hdr.e_shoff + i * sizeof(shdr), SEEK_SET);
+		if(1 != fread(&shdr, sizeof(shdr), 1, fp))
+		{
+			printf("fail to read shdr\n");
+			exit(1);
+		}
+		// if()
+		char* name = "";
+		if(shdr.sh_name) {
+			printf(" has name ");
+			name = sect_names + shdr.sh_name;
+		}
+		printf("reading section header #%d %s\n", i, name);
+		
+	}*/
+
 	fclose(fp);
 	
 	//Create one last memory region for the stack, then point the stack pointer to it

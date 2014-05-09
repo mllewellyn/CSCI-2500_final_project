@@ -12,7 +12,7 @@
 __start:
 	# Run the print_string syscall which has code 4
 	li	$v0,4		# Code for syscall: print_string
-	la	$a0, msg	# Pointer to string (load the address of msg)
+	la	$a0, .msg	# Pointer to string (load the address of msg)
 	syscall
 	li	$v0,10		# Code for syscall: exit
 	syscall
@@ -25,4 +25,4 @@ __start:
 	# an ASCII string in memory terminated by
 	# the null character. Note that strings are
 	# surrounded by double-quotes
-msg:	.asciiz	"Hello World!\n"
+.msg:	.asciiz	"Hello World!\n"

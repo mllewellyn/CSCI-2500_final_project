@@ -34,7 +34,7 @@ uint32_t FetchWordFromVirtualMemory(uint32_t address, struct virtual_mem_region*
 	}
 	
 	//Didn't find anything! Give up
-	printf("SEGFAULT: attempted to read word from nonexistent virtual address %08x\n", address);
+	printf("SEGFAULT: attempted to read word from nonexistent virtual address 0x%08x\n", address);
 	exit(1);
 }
 
@@ -59,7 +59,7 @@ void StoreWordToVirtualMemory(uint32_t address, uint32_t value, struct virtual_m
 		uint32_t offset = address - memory->vaddr;
 		if(offset & 3)
 		{
-			printf("SEGFAULT: address %08x is not aligned\n", address);
+			printf("SEGFAULT: address 0x%08x is not aligned\n", address);
 			exit(1);	
 		}
 		
@@ -68,8 +68,26 @@ void StoreWordToVirtualMemory(uint32_t address, uint32_t value, struct virtual_m
 	}
 	
 	//Didn't find anything! Give up
-	printf("SEGFAULT: attempted to write word to nonexistent virtual address %08x\n", address);
+	printf("SEGFAULT: attempted to write word to nonexistent virtual address 0x%08x\n", address);
 	exit(1);
+}
+
+/**
+	@brief Runs the actual simulation
+ */
+void RunSimulator(struct virtual_mem_region* memory, struct context* ctx)
+{
+	printf("Starting simulation...\n");
+	
+	union mips_instruction inst;
+	while(1)
+	{
+		//print pc counter for debugging
+		printf("(0x%X) ", ctx->pc);
+		inst.word = FetchWordFromVirtualMemory(ctx->pc, memory);
+		if(!SimulateInstruction(&inst, memory, ctx))
+			break;		
+	}
 }
 
 /**
@@ -98,24 +116,6 @@ int determineInstType(union mips_instruction* inst) {
 	}
 }
 
-/**
-	@brief Runs the actual simulation
- */
-void RunSimulator(struct virtual_mem_region* memory, struct context* ctx)
-{
-	printf("Starting simulation...\n");
-	
-	union mips_instruction inst;
-	while(1)
-	{
-		//print pc counter for debugging
-		printf("(%X) ", ctx->pc);
-		inst.word = FetchWordFromVirtualMemory(ctx->pc, memory);
-		if(!SimulateInstruction(&inst, memory, ctx))
-			break;		
-	}
-}
-
 void printInstBits(union mips_instruction* inst) {
 	uint32_t inst_word = inst->word;
 	printf("DEBUG inst: ");
@@ -131,11 +131,11 @@ void printInstBits(union mips_instruction* inst) {
 		printf("%d", reversed%2);
 		reversed = reversed>>1;
 		//add spacing so it's easier to read, first check for R type
-		if(type != 1 && ((type == 2 && (i==31-5 || i==31-10 || i==31-15 || i==31-20 || i==31-25)) ||
+		if(type != 1 && ((type == 2 && (i==31-6 || i==31-11 || i==31-16 || i==31-21 || i==31-26)) ||
 			//check for only J type
-			(type == 4 && i==31-25) ||
+			(type == 4 && i==31-26) ||
 			//all other are I type
-			(type != 3 && (i==31-15 || i==31-20 || i==31-25)))) {
+			(type == 3 && (i==31-16 || i==31-21 || i==31-26)) ) ) {
 			printf(" ");
 		}
 	}
@@ -151,26 +151,35 @@ void printInstHex(union mips_instruction* inst) {
 	// R type
 	} else if(type == 2) {
 		printf("DEBUG R type ");
-		printf("opcode:0x%X ",inst->rtype.opcode);
-		printf("rs:0x%X ",inst->rtype.rs);
-		printf("rt:0x%X ",inst->rtype.rt);
-		printf("rd:0x%X ",inst->rtype.rd);
-		printf("shamt:0x%X ",inst->rtype.shamt);
-		printf("func:0x%X",inst->rtype.func);
+		printf("opcode:0x%02X ",inst->rtype.opcode);
+		printf("rs:0x%02X ",inst->rtype.rs);
+		printf("rt:0x%02X ",inst->rtype.rt);
+		printf("rd:0x%02X ",inst->rtype.rd);
+		printf("shamt:0x%02X ",inst->rtype.shamt);
+		printf("func:0x%02X",inst->rtype.func);
 	// I type
 	} else if(type == 3) {
 		printf("DEBUG I type ");
-		printf("opcode:0x%X ", inst->itype.opcode);
-		printf("rs:0x%X ", inst->itype.rs);
-		printf("rt:0x%X ", inst->itype.rt);
-		printf("imm:0x%X", inst->itype.imm);
+		printf("opcode:0x%02X ", inst->itype.opcode);
+		printf("rs:0x%02X ", inst->itype.rs);
+		printf("rt:0x%02X ", inst->itype.rt);
+		printf("imm:0x%04X", inst->itype.imm);
 	// J type
 	} else if(type == 4) {
 		printf("DEBUG J type ");
-		printf("opcode:0x%X ", inst->jtype.opcode);
-		printf("addr:0x%X ", inst->jtype.addr);
+		printf("opcode:0x%02X ", inst->jtype.opcode);
+		printf("addr:0x%07X ", inst->jtype.addr<<2);
 	}
 	printf("\n");
+}
+
+/*
+	Sign fill a number and return it
+*/
+int32_t signFill(int32_t val, int orig_bits) {
+	val = val << 32 - orig_bits;
+	val = val >> 32 - orig_bits;
+	return val;
 }
 
 /**
@@ -234,25 +243,32 @@ int SimulateRtypeInstruction(union mips_instruction* inst, struct virtual_mem_re
 int SimulateItypeInstruction(union mips_instruction* inst, struct virtual_mem_region* memory, struct context* ctx)
 {
 	// instructions to impliment
-	// I ALU: ADDI, ADDIU, ANDI, LUI, ORI, XORI
+	// I ALU: ADDI, ADDIU, ANDI, LUI, ORI, XORIc
 	// I branch: BEQ, BGEZ, BGTZ, BLEZ, BLTZ, BNE, BGEZAL, BLTZAL
 	// I load/store: LB, LW, SB, SW
 	switch(inst->itype.opcode) {
 		case OP_ADDIU:	//R[rt] = R[rs] + SignExtImm
-			ctx->regs[inst->itype.rt] = ctx->regs[inst->itype.rs] + inst->itype.imm;
+			//note this actually adds a signed number BUT doesn't throw anything when there's overflow
+			; // nop to make the switch happy
+			int32_t imm = signFill(inst->itype.imm, 16);
+			// printf("DEBUG ORIG: 0x%x\n" ,ctx->regs[inst->itype.rt]);
+			// printf("DEBUG FINAL 0x%x\n", ctx->regs[inst->itype.rs] + imm);
+			ctx->regs[inst->itype.rt] = ctx->regs[inst->itype.rs] + imm;
 			break;
-		case OP_LUI:
-
-			// break;
+		case OP_LUI: // R[rt] = {imm, 16’b0}
+			//put the 16 bits from the imm into the 16 most sig bits of the target reg, rest are set 0
+			ctx->regs[inst->itype.rt] = inst->itype.imm>>16;
+			break;
 		case OP_LW: // R[rt] = M[R[rs]+SignExtImm]
 			// THIS IS NOT WORKING YET, WEIRD LABEL SHIT
-			// printf("DEBUG SP addr:0x%X\n", ctx->regs[sp]);
-			// printf("DEBUG MEM TARGET:0x%X\n", ctx->regs[inst->itype.rs] + inst->itype.imm + ctx->regs[sp]);
-			// ctx->regs[inst->itype.rt] = FetchWordFromVirtualMemory(ctx->regs[inst->itype.rs] + inst->itype.imm + ctx->regs[sp], memory);
-			// break;
-		case OP_SW:
-
-			// break; //removing break until implimented
+			printf("DEBUG MEM TARGET:0x%X\n", ctx->regs[inst->itype.rs] + inst->itype.imm);
+			ctx->regs[inst->itype.rt] = FetchWordFromVirtualMemory(ctx->regs[inst->itype.rs] + inst->itype.imm, memory);
+			break;
+		case OP_SW: // M[R[rs]+SignExtImm] = R[rt]
+			printf("DEBUG REG VAL:0x%x\n", ctx->regs[inst->itype.rs]);
+			printf("DEBUG MEM TARGET:0x%x\n", ctx->regs[inst->itype.rs] + inst->itype.imm);
+			StoreWordToVirtualMemory(ctx->regs[inst->itype.rs] + inst->itype.imm, ctx->regs[inst->itype.rt], memory);
+			break;
 		default:
 			printf("GOT A BAD/UNIMPLIMENTED I TYPE INSTRUCITON\n");
 			return 0; //return this to exit program
@@ -269,8 +285,9 @@ int SimulateJtypeInstruction(union mips_instruction* inst, struct virtual_mem_re
 	// J jump: J, JAL
 	switch(inst->jtype.opcode) {
 		case OP_JAL: //R[ra]=PC+8;PC=JumpAddr
-			ctx->regs[ra] = ctx->pc+8;
-			ctx->pc = inst->jtype.addr;
+			ctx->regs[ra] = ctx->pc+4;
+			//get first 4 bits from PC and pop them on the front of the 26 (shifted to 28) bits from addr
+			ctx->pc = (ctx->pc & 0xF0000000) | (inst->jtype.addr<<2);
 			return 1; // early return to prevent pc+=4
 			break; // just for style
 		default:
