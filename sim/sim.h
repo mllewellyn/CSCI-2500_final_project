@@ -107,7 +107,8 @@ struct virtual_mem_region
 struct context
 {
 	uint32_t pc;
-	///might add HI and LO, special mem addr for mult
+	uint32_t hi;
+	uint32_t lo;
 	uint32_t regs[32];
 };
 
@@ -146,5 +147,11 @@ int SimulateRtypeInstruction(union mips_instruction* inst, struct virtual_mem_re
 int SimulateItypeInstruction(union mips_instruction* inst, struct virtual_mem_region* memory, struct context* ctx);
 int SimulateJtypeInstruction(union mips_instruction* inst, struct virtual_mem_region* memory, struct context* ctx);
 int SimulateSyscall(uint32_t callnum, struct virtual_mem_region* memory, struct context* ctx);
+
+//debug functions
+int determineInstType(union mips_instruction* inst);
+void printInstBits(union mips_instruction* inst);
+void printInstHex(union mips_instruction* inst);
+int32_t signFill(int32_t val, int orig_bits);
 
 #endif

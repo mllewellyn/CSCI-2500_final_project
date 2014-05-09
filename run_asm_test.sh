@@ -12,6 +12,7 @@ if make -C asm_testprog/ ; then
 		# ./sim/sim.out asm_testprog/uni_pacific_test_cases/example5_function_without_stack.S.elf
 		# ./sim/sim.out asm_testprog/uni_pacific_test_cases/example5_function_with_stack.S.elf
 		# ./sim/sim.out asm_testprog/uni_pacific_test_cases/example6_loop_with_function.S.elf
+		# ./sim/sim.out asm_testprog/max_hw3/SPIM_Calc.s.elf
 	else
 		echo -e "\nSIM compile failed"
 	fi
