@@ -19,9 +19,9 @@ int main()
 	const char* str = "hello world\n";
 	do_syscall((unsigned int)str, 0, SYS_PRINT_STR);	// print string syscall
 	int a = 1234;
-	do_syscall((unsigned int)&a, 0, 1); 	//print int syscall
+	do_syscall((unsigned int)a, 0, 1); 	//print int syscall
 	char c = 'h';
-	do_syscall((unsigned int)&c, 0, 12);	//print char syscall
+	do_syscall((unsigned int)c, 0, 11);	//print char syscall
 	
 	return 0;
 }
