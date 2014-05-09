@@ -146,7 +146,7 @@ int SimulateInstruction(union mips_instruction* inst, struct virtual_mem_region*
 int SimulateRtypeInstruction(union mips_instruction* inst, struct virtual_mem_region* memory, struct context* ctx);
 int SimulateItypeInstruction(union mips_instruction* inst, struct virtual_mem_region* memory, struct context* ctx);
 int SimulateJtypeInstruction(union mips_instruction* inst, struct virtual_mem_region* memory, struct context* ctx);
-int SimulateSyscall(uint32_t callnum, struct virtual_mem_region* memory, struct context* ctx);
+int SimulateSyscall(struct virtual_mem_region* memory, struct context* ctx);
 
 //debug functions
 int determineInstType(union mips_instruction* inst);

@@ -4,7 +4,7 @@
 	@brief The core of the simulator
  */
 #include "sim.h"
-
+#include <stdbool.h>
 /**
 	@brief Read logic for instruction fetch and load instructions
 	
@@ -86,7 +86,7 @@ void RunSimulator(struct virtual_mem_region* memory, struct context* ctx)
 		printf("(0x%X) ", ctx->pc);
 		inst.word = FetchWordFromVirtualMemory(ctx->pc, memory);
 		if(!SimulateInstruction(&inst, memory, ctx))
-			break;		
+			break;
 	}
 }
 
@@ -197,7 +197,7 @@ int SimulateInstruction(union mips_instruction* inst, struct virtual_mem_region*
 	int result;
 	int type = determineInstType(inst);
 	if(type == 1) {
-		result = SimulateSyscall(ctx->regs[2], memory, ctx);
+		result = SimulateSyscall(memory, ctx);
 	} else if(type == 2) {
 		result = SimulateRtypeInstruction(inst, memory, ctx);
 	// not R type or the only J type, must be I type, could also do or on I types but lazy
@@ -322,7 +322,7 @@ int SimulateItypeInstruction(union mips_instruction* inst, struct virtual_mem_re
 			break;
 		case OP_LUI: // R[rt] = {imm, 16’b0}
 			//put the 16 bits from the imm into the 16 most sig bits of the target reg, rest are set 0
-			ctx->regs[inst->itype.rt] = inst->itype.imm>>16;
+			ctx->regs[inst->itype.rt] = inst->itype.imm<<16;
 			break;
 		case OP_LW: // R[rt] = M[R[rs]+SignExtImm]
 			// THIS IS NOT WORKING YET, WEIRD LABEL SHIT
@@ -363,10 +363,28 @@ int SimulateJtypeInstruction(union mips_instruction* inst, struct virtual_mem_re
 	return 1;
 }
 
-int SimulateSyscall(uint32_t callnum, struct virtual_mem_region* memory, struct context* ctx)
+int SimulateSyscall(struct virtual_mem_region* memory, struct context* ctx)
 {//uint32
-	printf("Simulating syscall #%d\n", callnum);
-	switch(callnum) {
+	printf("Simulating syscall #%d\n", ctx->regs[v0]);
+	switch(ctx->regs[v0]) {
+		case 4: //print null terminated string
+			; //nop for switch
+			uint32_t addr = ctx->regs[a0];
+			int32_t word;
+			bool done = false;
+			while((word = FetchWordFromVirtualMemory(addr, memory)) && !done ) {
+				// read word then read chars from word
+				for(int i=0; i<4; ++i) {
+					//get the char (1 byte) from the word (4 bytes)
+					char c = (word & (0xFF<<(i*8)))>>(i*8);
+					if(c == 0) { //null terminate
+						done = true;
+						break;
+					}
+					printf("%c", c);
+				}
+				addr += 4;
+			}
 		case 10: //exit program
 			return 0;
 			break;

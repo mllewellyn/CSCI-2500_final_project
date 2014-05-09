@@ -1,2 +1,2 @@
 all:
-	gcc *.c -o sim.out --std=c99
+	gcc *.c -o sim.out --std=c99 -Werror -g
