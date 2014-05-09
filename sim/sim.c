@@ -213,9 +213,15 @@ int SimulateRtypeInstruction(union mips_instruction* inst, struct virtual_mem_re
 	switch(inst->rtype.func) {
 		case 0x20: // Add R[rd] = R[rs] + R[rt]
 			ctx->regs[inst->rtype.rd] = ctx->regs[inst->rtype.rs] + ctx->regs[inst->rtype.rt];
+			if(ctx->regs[inst->rtype.rd]>2147483647){		//Checks for overflow
+				return 0;
+			}
 			break;
 		case 0x22: // sub R[rd] = R[rs] - R[rt]
 			ctx->regs[inst->rtype.rd] = ctx->regs[inst->rtype.rs] - ctx->regs[inst->rtype.rt];
+			if(ctx->regs[inst->rtype.rd]<-2147483649){		//Checks for overflow
+				return 0;
+			}
 			break;
 		case 0x24: // and R[rd] = R[rs] & R[rt]
 			ctx->regs[inst->rtype.rd] = ctx->regs[inst->rtype.rs] & ctx->regs[inst->rtype.rt];
@@ -223,6 +229,65 @@ int SimulateRtypeInstruction(union mips_instruction* inst, struct virtual_mem_re
 		case 0x25: // or R R[rd] = R[rs] | R[rt]
 			ctx->regs[inst->rtype.rd] = ctx->regs[inst->rtype.rs] | ctx->regs[inst->rtype.rt];
 			break;
+		case 0x21: // Addu R[rd]=R[rs]+R[rt]
+			ctx->regs[inst->rtype.rd] = ctx->regs[inst->rtype.rs] + ctx->regs[inst->rtype.rt];
+			break;
+		case 0x23: //Subu  R[rd] = R[rs] - R[rt]
+			ctx->regs[inst->rtype.rd] = ctx->regs[inst->rtype.rs] - ctx->regs[inst->rtype.rt];
+			break;
+		/*case 0x18: //Mult R[rd] = R[rs] * R[rt]
+			ctx->regs[inst->rtype.rd] = ctx->regs[inst->rtype.rs] * ctx->regs[inst->rtype.rt];
+			if(ctx->regs[inst->rtype.rd]<-2147483649||ctx->regs[inst->rtype.rd]>2147483647){		//Checks for overflow
+				return 0;
+			}
+			break; 
+		case 0x19: //Multu R[rd] = R[rs] * R[rt]
+			ctx->regs[inst->rtype.rd] = ctx->regs[inst->rtype.rs] * ctx->regs[inst->rtype.rt];
+			break; */
+		case 0x26: //XOR R[rd]=R[rs] ^ R[rt]
+			ctx->regs[inst->rtype.rd] = ctx->regs[inst->rtype.rs] ^ ctx->regs[inst->rtype.rt];
+			break;
+		case 0x2A: //SLT R[rd]=R[rs] SLT R[rt]
+			if (ctx->regs[inst->rtype.rs]<ctx->regs[inst->rtype.rt]){
+				ctx->regs[inst->rtype.rd] =1;
+				break;
+			}
+			else {
+				ctx->regs[inst->rtype.rd] =0;
+				break;
+
+			}
+			break; //For style
+		case 0x2B: //SLTU R[rd]=R[rs] SLTU R[rt]. Unsigned component not implmenented, not sure how to cast labels as unsigned.
+			if (ctx->regs[inst->rtype.rs]<ctx->regs[inst->rtype.rt]){
+				ctx->regs[inst->rtype.rd] =1;
+				break;
+			}
+			else {
+				ctx->regs[inst->rtype.rd] =0;
+				break;
+
+			}
+			break; //For style
+		case 0x00: //SLL R[rd]=R[rs] << R[rt] (O-Extended). Constant input (shamt)
+			ctx->regs[inst->rtype.rd] =ctx->regs[inst->rtype.rs]<<ctx->regs[inst->rtype.shamt];
+			break;
+		case 0x02: //SRL R[rd]=R[rs] >> R[rt] (0-Extended). Constant (shamt)
+			ctx->regs[inst->rtype.rd] =ctx->regs[inst->rtype.rs]>>ctx->regs[inst->rtype.shamt];
+			break;
+		case 0x03: //SRA R[rd]=R[rs] >> R[rt] (Sign-Extended). Sign extension not implemented. Need to figure out casting labels as unsigned.
+			ctx->regs[inst->rtype.rd] =ctx->regs[inst->rtype.rs]>>ctx->regs[inst->rtype.shamt];
+			break;
+		case 0x04: //SLLV. R[rd]=R[rs] << R[rt] (O-Extended) Variable input
+			ctx->regs[inst->rtype.rd] =ctx->regs[inst->rtype.rs]<<ctx->regs[inst->rtype.rt];
+			break;
+		case 0x06: //SRLV R[rd]=R[rs] >> R[rt] (0-Extended) Variable input
+			ctx->regs[inst->rtype.rd] =ctx->regs[inst->rtype.rs]>>ctx->regs[inst->rtype.rt];
+			break;
+		case 0x07: //SRAV R[rd]=R[rs] >> R[rt] (0-Extended) Variable input. Like the other arithmetic shifts it is not implemented
+			ctx->regs[inst->rtype.rd] =ctx->regs[inst->rtype.rs]>>ctx->regs[inst->rtype.rt];
+			break;
+		
 		default:
 			printf("GOT A BAD/UNIMPLIMENTED R TYPE INSTRUCIONT\n");
 			return 0; //return this to exit program
@@ -282,7 +347,7 @@ int SimulateJtypeInstruction(union mips_instruction* inst, struct virtual_mem_re
 }
 
 int SimulateSyscall(uint32_t callnum, struct virtual_mem_region* memory, struct context* ctx)
-{
+{//uint32
 	printf("Simulating syscall #%d\n", callnum);
 	switch(callnum) {
 		case 10: //exit program
