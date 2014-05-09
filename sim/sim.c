@@ -220,15 +220,16 @@ int SimulateRtypeInstruction(union mips_instruction* inst, struct virtual_mem_re
 	// R move: MFHI, MFLO
 	// R jump: JR
 	switch(inst->rtype.func) {
+		// R ALU
 		case 0x20: // Add R[rd] = R[rs] + R[rt]
 			ctx->regs[inst->rtype.rd] = ctx->regs[inst->rtype.rs] + ctx->regs[inst->rtype.rt];
-			if(ctx->regs[inst->rtype.rd]>2147483647){		//Checks for overflow
+			if(ctx->regs[inst->rtype.rd]>2147483647) {		//Checks for overflow
 				return 0;
 			}
 			break;
 		case 0x22: // sub R[rd] = R[rs] - R[rt]
 			ctx->regs[inst->rtype.rd] = ctx->regs[inst->rtype.rs] - ctx->regs[inst->rtype.rt];
-			if(ctx->regs[inst->rtype.rd]<-2147483649){		//Checks for overflow
+			if(ctx->regs[inst->rtype.rd]<-2147483649) {		//Checks for overflow
 				return 0;
 			}
 			break;
@@ -257,27 +258,19 @@ int SimulateRtypeInstruction(union mips_instruction* inst, struct virtual_mem_re
 			ctx->regs[inst->rtype.rd] = ctx->regs[inst->rtype.rs] ^ ctx->regs[inst->rtype.rt];
 			break;
 		case 0x2A: //SLT R[rd]=R[rs] SLT R[rt]
-			if (ctx->regs[inst->rtype.rs]<ctx->regs[inst->rtype.rt]){
-				ctx->regs[inst->rtype.rd] =1;
-				break;
+			if (ctx->regs[inst->rtype.rs] < ctx->regs[inst->rtype.rt]) {
+				ctx->regs[inst->rtype.rd] = 1;
+			} else {
+				ctx->regs[inst->rtype.rd] = 0;
 			}
-			else {
-				ctx->regs[inst->rtype.rd] =0;
-				break;
-
-			}
-			break; //For style
+			break;
 		case 0x2B: //SLTU R[rd]=R[rs] SLTU R[rt]. Unsigned component not implmenented, not sure how to cast labels as unsigned.
-			if (ctx->regs[inst->rtype.rs]<ctx->regs[inst->rtype.rt]){
-				ctx->regs[inst->rtype.rd] =1;
-				break;
+			if (ctx->regs[inst->rtype.rs] < ctx->regs[inst->rtype.rt]) {
+				ctx->regs[inst->rtype.rd] = 1;
+			} else {
+				ctx->regs[inst->rtype.rd] = 0;
 			}
-			else {
-				ctx->regs[inst->rtype.rd] =0;
-				break;
-
-			}
-			break; //For style
+			break;
 		case 0x00: //SLL R[rd]=R[rs] << R[rt] (O-Extended). Constant input (shamt)
 			ctx->regs[inst->rtype.rd] =ctx->regs[inst->rtype.rs]<<ctx->regs[inst->rtype.shamt];
 			break;
@@ -298,8 +291,14 @@ int SimulateRtypeInstruction(union mips_instruction* inst, struct virtual_mem_re
 			break;
 		
 		default:
-			printf("GOT A BAD/UNIMPLIMENTED R TYPE INSTRUCIONT\n");
+			printf("GOT A BAD/UNIMPLIMENTED R TYPE INSTRUCITON\n");
 			return 0; //return this to exit program
+
+		// R jump: JR
+		case 0x08: // PC=R[rs]
+			ctx->pc = ctx->regs[inst->rtype.rs];
+			return 1; // early return to avoid ctx->pc += 4
+			break; // for style
 	}
 	ctx->pc += 4;
 	return 1;
@@ -325,14 +324,22 @@ int SimulateItypeInstruction(union mips_instruction* inst, struct virtual_mem_re
 			ctx->regs[inst->itype.rt] = inst->itype.imm<<16;
 			break;
 		case OP_LW: // R[rt] = M[R[rs]+SignExtImm]
-			// THIS IS NOT WORKING YET, WEIRD LABEL SHIT
-			printf("DEBUG MEM TARGET:0x%X\n", ctx->regs[inst->itype.rs] + inst->itype.imm);
+			// (note to self) WORKING DON't FUCK WITH
+			// printf("DEBUG MEM TARGET:0x%X\n", ctx->regs[inst->itype.rs] + inst->itype.imm);
 			ctx->regs[inst->itype.rt] = FetchWordFromVirtualMemory(ctx->regs[inst->itype.rs] + inst->itype.imm, memory);
 			break;
 		case OP_SW: // M[R[rs]+SignExtImm] = R[rt]
-			printf("DEBUG REG VAL:0x%x\n", ctx->regs[inst->itype.rs]);
-			printf("DEBUG MEM TARGET:0x%x\n", ctx->regs[inst->itype.rs] + inst->itype.imm);
+			// (note to self) WORKING DON't FUCK WITH
+			// printf("DEBUG REG_S VAL:0x%x\n", ctx->regs[inst->itype.rs]);
+			// printf("DEBUG MEM TARGET:0x%x\n", ctx->regs[inst->itype.rs] + inst->itype.imm);
 			StoreWordToVirtualMemory(ctx->regs[inst->itype.rs] + inst->itype.imm, ctx->regs[inst->itype.rt], memory);
+			break;
+		case 0x28: // sb: store byte M[R[rs]+SignExtImm](7:0) = R[rt](7:0)
+			; // nop for switch
+			int32_t word = FetchWordFromVirtualMemory(ctx->regs[inst->itype.rs] + inst->itype.imm, memory);
+			word = word & !0x7F; // wipe out 7 smallest bytes
+			word = word | (ctx->regs[inst->itype.rt] & 0x7F); // or with 7 smallest bytes of rt
+			StoreWordToVirtualMemory(ctx->regs[inst->itype.rs] + inst->itype.imm, word, memory);
 			break;
 		default:
 			printf("GOT A BAD/UNIMPLIMENTED I TYPE INSTRUCITON\n");
@@ -367,6 +374,10 @@ int SimulateSyscall(struct virtual_mem_region* memory, struct context* ctx)
 {//uint32
 	printf("Simulating syscall #%d\n", ctx->regs[v0]);
 	switch(ctx->regs[v0]) {
+		case 1: //print int
+			printf("%d", FetchWordFromVirtualMemory(ctx->regs[a0], memory));
+			printf("\n"); //this is just for debugging
+			break;
 		case 4: //print null terminated string
 			; //nop for switch
 			uint32_t addr = ctx->regs[a0];
@@ -385,8 +396,13 @@ int SimulateSyscall(struct virtual_mem_region* memory, struct context* ctx)
 				}
 				addr += 4;
 			}
+			break;
 		case 10: //exit program
 			return 0;
+			break;
+		case 12: // print char
+			printf("%c", FetchWordFromVirtualMemory(ctx->regs[a0], memory));
+			printf("\n"); //this is just for debugging
 			break;
 		default:
 			printf("GOT A BAD/UNIMPLIMENTED SYSCALL\n");
