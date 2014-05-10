@@ -307,10 +307,10 @@ int SimulateRtypeInstruction(union mips_instruction* inst, struct virtual_mem_re
 			ctx->regs[inst->rtype.rd] = ((int32_t) ctx->regs[inst->rtype.rt]) >> ctx->regs[inst->rtype.rs];
 			break;
 		case 0x10: // mfhi: move from hi.
-			ctx->regs[inst->itype.rt] = ctx->hi;
+			ctx->regs[inst->rtype.rd] = ctx->hi;
 			break;
 		case 0x12: // mflo: move form lo
-			ctx->regs[inst->itype.rt] = ctx->lo;
+			ctx->regs[inst->rtype.rd] = ctx->lo;
 			break;
 		// R jump: JR
 		case 0x08: // PC=R[rs]
