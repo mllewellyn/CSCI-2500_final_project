@@ -6,7 +6,7 @@
 #include "sim.h"
 // Other includes and debug constant
 #include <stdbool.h>
-const bool debug_mode = false;
+const bool debug_mode = true;
 
 /**
 	@brief Read logic for instruction fetch and load instructions
@@ -252,15 +252,24 @@ int SimulateRtypeInstruction(union mips_instruction* inst, struct virtual_mem_re
 		case 0x23: //Subu  R[rd] = R[rs] - R[rt]
 			ctx->regs[inst->rtype.rd] = ctx->regs[inst->rtype.rs] - ctx->regs[inst->rtype.rt];
 			break;
-		/*case 0x18: //Mult R[rd] = R[rs] * R[rt]
-			ctx->regs[inst->rtype.rd] = ctx->regs[inst->rtype.rs] * ctx->regs[inst->rtype.rt];
-			if(ctx->regs[inst->rtype.rd]<-2147483649||ctx->regs[inst->rtype.rd]>2147483647){		//Checks for overflow
-				return 0;
-			}
+		case 0x18:; //Mult {Hi,Lo} = R[rs] * R[rt]
+			///this seems liike cheating, but lets try it for now
+			int64_t total = ctx->regs[inst->rtype.rt] * ctx->regs[inst->rtype.rs];
+			printf("DEBUG mul total %d\n", (int) total);
+			printf("DEBUG mul low %d\n", (int) total & 0x00000000FFFFFFFF);
+			printf("DEBUG mul high %d\n", (int) ((total & 0xFFFFFFFF00000000)>>32));
+			ctx->lo = (int) total & 0x00000000FFFFFFFF;
+			ctx->hi = (int) ((total & 0xFFFFFFFF00000000)>>32);
+			break;
+		case 0x19:; //Multu {Hi,Lo} = R[rs] * R[rt]
+			uint64_t utotal = ctx->regs[inst->rtype.rt] * ctx->regs[inst->rtype.rs];
+			ctx->lo = utotal & 0x00000000FFFFFFFF; // bottom 32 bits
+			ctx->hi = (utotal & 0xFFFFFFFF00000000)>>32; // top 32 bits
 			break; 
-		case 0x19: //Multu R[rd] = R[rs] * R[rt]
-			ctx->regs[inst->rtype.rd] = ctx->regs[inst->rtype.rs] * ctx->regs[inst->rtype.rt];
-			break; */
+		case 0x1a: // div Lo=R[rs]/R[rt]; Hi=R[rs]%R[rt]
+			ctx->lo = ctx->regs[inst->rtype.rs] / ctx->regs[inst->rtype.rt];
+			ctx->hi = ctx->regs[inst->rtype.rs] % ctx->regs[inst->rtype.rt];
+			break;
 		case 0x26: //XOR R[rd]=R[rs] ^ R[rt]
 			ctx->regs[inst->rtype.rd] = ctx->regs[inst->rtype.rs] ^ ctx->regs[inst->rtype.rt];
 			break;
@@ -297,16 +306,20 @@ int SimulateRtypeInstruction(union mips_instruction* inst, struct virtual_mem_re
 		case 0x07: //SRAV R[rd]=R[rt] >> R[rs] (Sign-Extended) Variable input. Like the other arithmetic shifts it is not implemented
 			ctx->regs[inst->rtype.rd] = ((int32_t) ctx->regs[inst->rtype.rt]) >> ctx->regs[inst->rtype.rs];
 			break;
-		
-		default:
-			printf("GOT A BAD/UNIMPLIMENTED R TYPE INSTRUCITON\n");
-			return 0; //return this to exit program
-
+		case 0x10: // mfhi: move from hi.
+			ctx->regs[inst->rtype.rd] = ctx->hi;
+			break;
+		case 0x12: // mflo: move form lo
+			ctx->regs[inst->rtype.rd] = ctx->lo;
+			break;
 		// R jump: JR
 		case 0x08: // PC=R[rs]
 			ctx->pc = ctx->regs[inst->rtype.rs];
 			return 1; // early return to avoid ctx->pc += 4
 			break; // for style
+		default:
+			printf("GOT A BAD/UNIMPLIMENTED R TYPE INSTRUCITON\n");
+			return 0; //return this to exit program
 	}
 	ctx->pc += 4;
 	return 1;
@@ -348,6 +361,12 @@ int SimulateItypeInstruction(union mips_instruction* inst, struct virtual_mem_re
 			word = word & !0x7F; // wipe out 7 smallest bytes
 			word = word | (ctx->regs[inst->itype.rt] & 0x7F); // or with 7 smallest bytes of rt
 			StoreWordToVirtualMemory(ctx->regs[inst->itype.rs] + inst->itype.imm, word, memory);
+			break;
+		case 0x05: // bne if(R[rs]!=R[rt]) PC=PC+4+BranchAddr
+			if(ctx->regs[inst->itype.rs] != ctx->regs[inst->itype.rt]) {
+				ctx->pc = ctx->pc + 4 + (ctx->pc & 0xF0000000) | (inst->itype.imm<<2);
+				return 1; // return early to prevent auto +4
+			}
 			break;
 		default:
 			printf("GOT A BAD/UNIMPLIMENTED I TYPE INSTRUCITON\n");

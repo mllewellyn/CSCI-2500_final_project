@@ -101,13 +101,31 @@
 	jal print_newline
 
 	# multiply and divide, should have remainders and overflow
-	# div a0, t0, t1
+	# load new stuff to keep it interesting
+	li t0, 2543
+	li t1, 123
+	# this is being weird
+	# div t0, t1
+	# mfhi a0
 	# syscall
 	# jal print_newline
-	# mult a0, t0, t1
+	# mflo a0
 	# syscall
 	# jal print_newline
-	# multu a0, t0, t1
+
+	mult t0, t1
+	mfhi a0
+	syscall
+	jal print_newline
+	mflo a0
+	syscall
+	jal print_newline
+
+	# multu t0, t1
+	# mfhi a0
+	# syscall
+	# jal print_newline
+	# mflo a0
 	# syscall
 	# jal print_newline
 
