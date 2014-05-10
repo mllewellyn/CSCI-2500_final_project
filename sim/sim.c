@@ -4,7 +4,10 @@
 	@brief The core of the simulator
  */
 #include "sim.h"
+// Other includes and debug constant
 #include <stdbool.h>
+const bool debug_mode = false;
+
 /**
 	@brief Read logic for instruction fetch and load instructions
 	
@@ -83,7 +86,9 @@ void RunSimulator(struct virtual_mem_region* memory, struct context* ctx)
 	while(1)
 	{
 		//print pc counter for debugging
-		printf("(0x%X) ", ctx->pc);
+		if(debug_mode)
+			printf("(0x%X) ", ctx->pc);
+
 		inst.word = FetchWordFromVirtualMemory(ctx->pc, memory);
 		if(!SimulateInstruction(&inst, memory, ctx))
 			break;
@@ -190,8 +195,10 @@ int32_t signFill(int32_t val, int orig_bits) {
 int SimulateInstruction(union mips_instruction* inst, struct virtual_mem_region* memory, struct context* ctx)
 {
 	//print the instruction so we know what hte heck we're supposed to be doing
-	// printInstBits(inst);
-	printInstHex(inst);
+	if(debug_mode) {
+		// printInstBits(inst);
+		printInstHex(inst);
+	}
 
 	//do some switching
 	int result;
@@ -216,7 +223,7 @@ int SimulateInstruction(union mips_instruction* inst, struct virtual_mem_region*
 int SimulateRtypeInstruction(union mips_instruction* inst, struct virtual_mem_region* memory, struct context* ctx)
 {
 	//instructions to impliment 
-	// R ALU: ADD, ADDU, AND, OR, SUB, SUBU, XOR, SLT, SLTI, SLTIU, SLTU, SLL, SLLV, SRA, SRL, SRLV, DIV, DIVU, MULT, MULTU
+	// R ALU: ADD, ADDU, AND, OR, SUB, SUBU, XOR, SLT, SLTU, SLL, SLLV, SRA, SRL, SRLV, DIV, DIVU, MULT, MULTU
 	// R move: MFHI, MFLO
 	// R jump: JR
 	switch(inst->rtype.func) {
@@ -271,23 +278,24 @@ int SimulateRtypeInstruction(union mips_instruction* inst, struct virtual_mem_re
 				ctx->regs[inst->rtype.rd] = 0;
 			}
 			break;
-		case 0x00: //SLL R[rd]=R[rs] << R[rt] (O-Extended). Constant input (shamt)
-			ctx->regs[inst->rtype.rd] =ctx->regs[inst->rtype.rs]<<ctx->regs[inst->rtype.shamt];
+			//shifts debugging these
+		case 0x00: //SLL R[rd]=R[rs] << shamt. Constant input (shamt)
+			ctx->regs[inst->rtype.rd] = ctx->regs[inst->rtype.rt] << inst->rtype.shamt;
 			break;
-		case 0x02: //SRL R[rd]=R[rs] >> R[rt] (0-Extended). Constant (shamt)
-			ctx->regs[inst->rtype.rd] =ctx->regs[inst->rtype.rs]>>ctx->regs[inst->rtype.shamt];
+		case 0x02: //SRL R[rd]=R[rs] >> shamt. Constant (shamt)
+			ctx->regs[inst->rtype.rd] = ctx->regs[inst->rtype.rt] >> inst->rtype.shamt;
 			break;
-		case 0x03: //SRA R[rd]=R[rs] >> R[rt] (Sign-Extended). Sign extension not implemented. Need to figure out casting labels as unsigned.
-			ctx->regs[inst->rtype.rd] =ctx->regs[inst->rtype.rs]>>ctx->regs[inst->rtype.shamt];
+		case 0x03: //SRA R[rd]=R[rs] >> R[rt] (Sign-Extended).
+			ctx->regs[inst->rtype.rd] = ((int32_t) ctx->regs[inst->rtype.rt]) >> inst->rtype.shamt;
 			break;
-		case 0x04: //SLLV. R[rd]=R[rs] << R[rt] (O-Extended) Variable input
-			ctx->regs[inst->rtype.rd] =ctx->regs[inst->rtype.rs]<<ctx->regs[inst->rtype.rt];
+		case 0x04: //SLLV. R[rd]=R[rt] << R[rs] (0-Extended) Variable input
+			ctx->regs[inst->rtype.rd] = ctx->regs[inst->rtype.rt] << ctx->regs[inst->rtype.rs];
 			break;
-		case 0x06: //SRLV R[rd]=R[rs] >> R[rt] (0-Extended) Variable input
-			ctx->regs[inst->rtype.rd] =ctx->regs[inst->rtype.rs]>>ctx->regs[inst->rtype.rt];
+		case 0x06: //SRLV R[rd]=R[rt] >> R[rs] (0-Extended) Variable input
+			ctx->regs[inst->rtype.rd] = ctx->regs[inst->rtype.rt] >> ctx->regs[inst->rtype.rs];
 			break;
-		case 0x07: //SRAV R[rd]=R[rs] >> R[rt] (0-Extended) Variable input. Like the other arithmetic shifts it is not implemented
-			ctx->regs[inst->rtype.rd] =ctx->regs[inst->rtype.rs]>>ctx->regs[inst->rtype.rt];
+		case 0x07: //SRAV R[rd]=R[rt] >> R[rs] (Sign-Extended) Variable input. Like the other arithmetic shifts it is not implemented
+			ctx->regs[inst->rtype.rd] = ((int32_t) ctx->regs[inst->rtype.rt]) >> ctx->regs[inst->rtype.rs];
 			break;
 		
 		default:
@@ -307,7 +315,7 @@ int SimulateRtypeInstruction(union mips_instruction* inst, struct virtual_mem_re
 int SimulateItypeInstruction(union mips_instruction* inst, struct virtual_mem_region* memory, struct context* ctx)
 {
 	// instructions to impliment
-	// I ALU: ADDI, ADDIU, ANDI, LUI, ORI, XORIc
+	// I ALU: ADDI, ADDIU, ANDI, LUI, ORI, XORIc, SLTI, SLTIU,
 	// I branch: BEQ, BGEZ, BGTZ, BLEZ, BLTZ, BNE, BGEZAL, BLTZAL
 	// I load/store: LB, LW, SB, SW
 	switch(inst->itype.opcode) {
@@ -371,12 +379,14 @@ int SimulateJtypeInstruction(union mips_instruction* inst, struct virtual_mem_re
 }
 
 int SimulateSyscall(struct virtual_mem_region* memory, struct context* ctx)
-{//uint32
-	printf("Simulating syscall #%d\n", ctx->regs[v0]);
+{
+	if(debug_mode)
+		printf("Simulating syscall #%d\n", ctx->regs[v0]);
+
 	switch(ctx->regs[v0]) {
 		case 1: //print int
-			printf("%d", FetchWordFromVirtualMemory(ctx->regs[a0], memory));
-			printf("\n"); //this is just for debugging
+			printf("%d",ctx->regs[a0]);
+			// printf("\n"); //this is just for debugging
 			break;
 		case 4: //print null terminated string
 			; //nop for switch
@@ -400,9 +410,9 @@ int SimulateSyscall(struct virtual_mem_region* memory, struct context* ctx)
 		case 10: //exit program
 			return 0;
 			break;
-		case 12: // print char
-			printf("%c", FetchWordFromVirtualMemory(ctx->regs[a0], memory));
-			printf("\n"); //this is just for debugging
+		case 11: // print char
+			printf("%c", ctx->regs[a0]);
+			// printf("\n"); //this is just for debugging
 			break;
 		default:
 			printf("GOT A BAD/UNIMPLIMENTED SYSCALL\n");
