@@ -163,10 +163,58 @@
 	bgez t1, branch_failure
 	jal print_success
 
-# BGTZ
-# BLEZ
-# BLTZ
-# BNE
+	addi t1, zero, -50
+	bgtz t1, branch_failure
+	jal print_success
+	addi t1, zero, 254
+	bgtz t1, itype_branch_4
+	j branch_failure
+	itype_branch_4:
+	jal print_success
+
+	addi t1, zero, -50
+	blez t1, itype_branch_5
+	j branch_failure
+	itype_branch_5:
+	jal print_success
+	addi t1, zero, 0
+	blez t1, itype_branch_6
+	j branch_failure
+	itype_branch_6:
+	jal print_success
+	addi t1, zero, 254
+	blez t1, branch_failure
+	jal print_success
+
+	addi t1, zero, -50
+	bgtz t1, branch_failure
+	jal print_success
+	addi t1, zero, 254
+	bgtz t1, itype_branch_7
+	j branch_failure
+	itype_branch_7:
+	jal print_success
+
+	addi t1, zero, 254
+	bltz t1, branch_failure
+	jal print_success
+	addi t1, zero, -52
+	bltz t1, itype_branch_8
+	j branch_failure
+	itype_branch_8:
+	jal print_success
+
+	addi t0, zero, 254
+	addi t1, zero, 254
+	bne t0, t1, branch_failure
+	jal print_success
+	addi t1, zero, 123
+	bne t0, t1, itype_branch_9
+	j branch_failure
+	itype_branch_9:
+	jal print_success
+
+
 # BGEZAL
 # BLTZAL
 

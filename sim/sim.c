@@ -403,31 +403,43 @@ int SimulateItypeInstruction(union mips_instruction* inst, struct virtual_mem_re
 			}
 			break;
 		case 0x01:  //bgez and bltz
-			if(inst->itype.rt==0x1 && (int32_t) ctx->regs[inst->itype.rs] >= 0) { //bgez
-				ctx->pc = ctx->pc + 4 + ((ctx->pc & 0xF0000000) | (inst->itype.imm<<2));
-				return 1; // return early to prevent auto +4
-			} else if(inst->itype.rt==0x0 && (int32_t) ctx->regs[inst->itype.rs] < 0) { //bltz
-				ctx->pc = ctx->pc + 4 + ((ctx->pc & 0xF0000000) | (inst->itype.imm<<2));
-				return 1; // return early to prevent auto +4
-			}
-			break;
-		case 0x06: //blez
-			if(ctx->regs[inst->itype.rt]==0x0 && (int32_t) ctx->regs[inst->itype.rs] <= 0) {
-				ctx->pc = ctx->pc + 4 + ((ctx->pc & 0xF0000000) | (inst->itype.imm<<2));
-				return 1; // return early to prevent auto +4
-			}
-			printf("GOT A BAD REGISTER WITH OPCODE 0x06/n");  //Shouldn't reach this point unless it is a bad instruction call
-			return 0;
-			break; // for style
-		case 0x07: //bgtz
-			if(ctx->regs[inst->itype.rt]==0x0){  
-				if(ctx->regs[inst->itype.rs] > 0) {
+			if(inst->itype.rt==0x1) {
+				if((int32_t) ctx->regs[inst->itype.rs] >= 0) { //bgez
 					ctx->pc = ctx->pc + 4 + ((ctx->pc & 0xF0000000) | (inst->itype.imm<<2));
 					return 1; // return early to prevent auto +4
 				}
+			} else if(inst->itype.rt==0x0) {
+				if ((int32_t) ctx->regs[inst->itype.rs] < 0) { //bltz
+					ctx->pc = ctx->pc + 4 + ((ctx->pc & 0xF0000000) | (inst->itype.imm<<2));
+					return 1; // return early to prevent auto +4
+				}
+			} else {
+				printf("Got bad I type instruction with opcode 0x01\n");
+				return 0;
 			}
-			printf("GOT A BAD REGISTER WITH OPCODE 0x07/n");  //Shouldn't reach this point unless it is a bad instruction call
-			return 0;
+			break;
+		case 0x06: //blez
+			if(ctx->regs[inst->itype.rt]==0x0) {
+				if((int32_t) ctx->regs[inst->itype.rs] <= 0) {
+					ctx->pc = ctx->pc + 4 + ((ctx->pc & 0xF0000000) | (inst->itype.imm<<2));
+					return 1; // return early to prevent auto +4
+				}
+			} else {
+				printf("Got bad I type instruction with opcode 0x06\n");
+				return 0;
+			}
+			break;
+		case 0x07: //bgtz
+			if(ctx->regs[inst->itype.rt]==0x0) {
+				if((int32_t) ctx->regs[inst->itype.rs] > 0) {
+					ctx->pc = ctx->pc + 4 + ((ctx->pc & 0xF0000000) | (inst->itype.imm<<2));
+					return 1; // return early to prevent auto +4
+				}
+			} else {
+				printf("Got bad I type instruction with opcode 0x07\n");
+				return 0;
+			}
+			break;
 		default:
 			printf("GOT A BAD/UNIMPLIMENTED I TYPE INSTRUCITON\n");
 			return 0; //return this to exit program
