@@ -6,7 +6,7 @@
 #include "sim.h"
 // Other includes and debug constant
 #include <stdbool.h>
-const bool debug_mode = true;
+const bool debug_mode = false;
 
 /**
 	@brief Read logic for instruction fetch and load instructions
@@ -110,7 +110,7 @@ int determineInstType(union mips_instruction* inst) {
 	} else if(inst->rtype.opcode == OP_RTYPE) {
 		// r type
 		return 2;
-	} else if(4 <= inst->itype.opcode && inst->itype.opcode <= 43) {
+	} else if((4 <= inst->itype.opcode && inst->itype.opcode <= 43) || inst->itype.opcode == 0x01) {
 		// i type
 		return 3;
 	} else if(2 <= inst->jtype.opcode && inst->jtype.opcode <= 3) {
@@ -174,6 +174,10 @@ void printInstHex(union mips_instruction* inst) {
 		printf("DEBUG J type ");
 		printf("opcode:0x%02X ", inst->jtype.opcode);
 		printf("addr:0x%07X ", inst->jtype.addr<<2);
+	} else {
+		printf("DEBUG unknown type ");
+		//this should always work
+		printInstBits(inst);
 	}
 	printf("\n");
 }
@@ -332,50 +336,34 @@ int SimulateItypeInstruction(union mips_instruction* inst, struct virtual_mem_re
 	// I ALU: ADDI, ADDIU, ANDI, LUI, ORI, XORIc, SLTI, SLTIU,
 	// I branch: BEQ, BGEZ, BGTZ, BLEZ, BLTZ, BNE, BGEZAL, BLTZAL
 	// I load/store: LB, LW, SB, SW
+	int32_t imm_filled = signFill(inst->itype.imm, 16); // sign fill for convience
 	switch(inst->itype.opcode) {
 		case OP_ADDIU:	//R[rt] = R[rs] + SignExtImm
 			//note this actually adds a signed number BUT doesn't throw anything when there's overflow
-			; // nop to make the switch happy
-			int32_t imm = signFill(inst->itype.imm, 16);
 			// printf("DEBUG ORIG: 0x%x\n" ,ctx->regs[inst->itype.rt]);
 			// printf("DEBUG FINAL 0x%x\n", ctx->regs[inst->itype.rs] + imm);
-			ctx->regs[inst->itype.rt] = ctx->regs[inst->itype.rs] + imm;
+			ctx->regs[inst->itype.rt] = ctx->regs[inst->itype.rs] + imm_filled;
 			break;
-		case 0x08:	// Unsigned R[rt] = R[rs] + SignExtImm
-			;
-			//int32_t imm = signFill(inst->itype.imm, 16);
-			ctx->regs[inst->itype.rt] = ctx->regs[inst->itype.rs] + imm;
+		case 0x08:	// Signed R[rt] = R[rs] + SignExtImm
+			ctx->regs[inst->itype.rt] = ctx->regs[inst->itype.rs] + imm_filled;
 			if(ctx->regs[inst->rtype.rt]>2147483647) {		//Checks for overflow
 				return 0;
 			}
 			break;
 		case 0x0C: //Andi R[rt]=R[rs] & Imm
-			; 
-			ctx->regs[inst->itype.rt] = ctx->regs[inst->itype.rs] & inst->itype.imm;
+			ctx->regs[inst->itype.rt] = ctx->regs[inst->itype.rs] & imm_filled;
 			break;
 		case 0x0D: //Ori R[rt]=R[rs] | Imm
-			; 
-			ctx->regs[inst->itype.rt] = ctx->regs[inst->itype.rs] | inst->itype.imm;
+			ctx->regs[inst->itype.rt] = ctx->regs[inst->itype.rs] | imm_filled;
 			break;
 		case 0x0E: //XORI R[rt]=R[rs] ^ Imm
-			; 
-			ctx->regs[inst->itype.rt] = ctx->regs[inst->itype.rs] ^ inst->itype.imm;
+			ctx->regs[inst->itype.rt] = ctx->regs[inst->itype.rs] ^ imm_filled;
 			break; 
 		case 0x0A: //SLTI R[rt]=R[rs] SLTI Imm
-			;
-			if (ctx->regs[inst->itype.rs] < inst->itype.imm) {
-				ctx->regs[inst->itype.rt] = 1;
-			} else {
-				ctx->regs[inst->itype.rt] = 0;
-			}
+			ctx->regs[inst->itype.rt] = (int32_t) ctx->regs[inst->itype.rs] < (int32_t) imm_filled;
 			break;
 		case 0x0B: //SLTIU R[rt]=R[rs] SLTIU Imm
-			;
-			if ((uint32_t)(ctx->regs[inst->itype.rs]) < (uint32_t)(inst->itype.imm)) {
-				ctx->regs[inst->itype.rt] = 1;
-			} else {
-				ctx->regs[inst->itype.rt] = 0;
-			}
+			ctx->regs[inst->itype.rt] = ctx->regs[inst->itype.rs] < imm_filled;
 			break;
 		case OP_LUI: // R[rt] = {imm, 16’b0}
 			//put the 16 bits from the imm into the 16 most sig bits of the target reg, rest are set 0
@@ -401,51 +389,37 @@ int SimulateItypeInstruction(union mips_instruction* inst, struct virtual_mem_re
 			break;
 		case 0x05: // bne if(R[rs]!=R[rt]) PC=PC+4+BranchAddr
 			if(ctx->regs[inst->itype.rs] != ctx->regs[inst->itype.rt]) {
-				ctx->pc = ctx->pc + 4 + (ctx->pc & 0xF0000000) | (inst->itype.imm<<2);
+				ctx->pc = ctx->pc + 4 + ((ctx->pc & 0xF0000000) | (inst->itype.imm<<2));
 				return 1; // return early to prevent auto +4
 			}
 			break;
 		case 0x04: // beq if(R[rs]==R[rt]) PC=PC+4+BranchAddr
 			if(ctx->regs[inst->itype.rs] == ctx->regs[inst->itype.rt]) {
-				ctx->pc = ctx->pc + 4 + (ctx->pc & 0xF0000000) | (inst->itype.imm<<2);
+				ctx->pc = ctx->pc + 4 + ((ctx->pc & 0xF0000000) | (inst->itype.imm<<2));
 				return 1; // return early to prevent auto +4
 			}
 			break;
 		case 0x01:  //bgez and bltz
-			if(ctx->regs[inst->rtype.rt]==0x1){  //bgez
-				if(ctx->regs[inst->itype.rs] >= 0) {
-					ctx->pc = ctx->pc + 4 + (ctx->pc & 0xF0000000) | (inst->itype.imm<<2);
-					return 1; // return early to prevent auto +4
-				}
-			if(ctx->regs[inst->rtype.rt]==0x0){ // bltz
-				if(ctx->regs[inst->itype.rs] < 0) {
-					ctx->pc = ctx->pc + 4 + (ctx->pc & 0xF0000000) | (inst->itype.imm<<2);
-					return 1; // return early to prevent auto +4
-				}
-
-
+			if(inst->itype.rt==0x1 && (int32_t) ctx->regs[inst->itype.rs] >= 0) { //bgez
+				ctx->pc = ctx->pc + 4 + ((ctx->pc & 0xF0000000) | (inst->itype.imm<<2));
+				return 1; // return early to prevent auto +4
+			} else if(inst->itype.rt==0x0 && (int32_t) ctx->regs[inst->itype.rs] < 0) { //bltz
+				ctx->pc = ctx->pc + 4 + ((ctx->pc & 0xF0000000) | (inst->itype.imm<<2));
+				return 1; // return early to prevent auto +4
 			}
-			
-
-			printf("GOT A BAD BRANCH AND NON-CORRESPONDING REGISTER\n"); //Shouldn't reach this point unless it is a bad instruction call
-			return 0;
-			
-
-			}
+			break;
 		case 0x06: //blez
-			if(ctx->regs[inst->rtype.rt]==0x0){  
-				if(ctx->regs[inst->itype.rs] <= 0) {
-					ctx->pc = ctx->pc + 4 + (ctx->pc & 0xF0000000) | (inst->itype.imm<<2);
-					return 1; // return early to prevent auto +4
-				}
+			if(ctx->regs[inst->itype.rt]==0x0 && (int32_t) ctx->regs[inst->itype.rs] <= 0) {
+				ctx->pc = ctx->pc + 4 + ((ctx->pc & 0xF0000000) | (inst->itype.imm<<2));
+				return 1; // return early to prevent auto +4
 			}
 			printf("GOT A BAD REGISTER WITH OPCODE 0x06/n");  //Shouldn't reach this point unless it is a bad instruction call
 			return 0;
-
+			break; // for style
 		case 0x07: //bgtz
-			if(ctx->regs[inst->rtype.rt]==0x0){  
+			if(ctx->regs[inst->itype.rt]==0x0){  
 				if(ctx->regs[inst->itype.rs] > 0) {
-					ctx->pc = ctx->pc + 4 + (ctx->pc & 0xF0000000) | (inst->itype.imm<<2);
+					ctx->pc = ctx->pc + 4 + ((ctx->pc & 0xF0000000) | (inst->itype.imm<<2));
 					return 1; // return early to prevent auto +4
 				}
 			}
@@ -472,6 +446,10 @@ int SimulateJtypeInstruction(union mips_instruction* inst, struct virtual_mem_re
 			ctx->pc = (ctx->pc & 0xF0000000) | (inst->jtype.addr<<2);
 			return 1; // early return to prevent pc+=4
 			break; // just for style
+		case 0x02: // j: PC=JumpAddr
+			ctx->pc = (ctx->pc & 0xF0000000) | (inst->jtype.addr<<2);
+			return 1; //early return to prevent pc+=4
+			break; // style
 		default:
 			printf("GOT A BAD/UNIMPLIMENTED J TYPE INSTRUCITON\n");
 			return 0;
