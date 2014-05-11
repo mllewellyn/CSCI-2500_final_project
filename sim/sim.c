@@ -233,16 +233,18 @@ int SimulateRtypeInstruction(union mips_instruction* inst, struct virtual_mem_re
 	switch(inst->rtype.func) {
 		// R ALU
 		case 0x20: // Add R[rd] = R[rs] + R[rt]
-			ctx->regs[inst->rtype.rd] = ctx->regs[inst->rtype.rs] + ctx->regs[inst->rtype.rt];
-			if(ctx->regs[inst->rtype.rd]>2147483647) {		//Checks for overflow
-				return 0;
-			}
+			;
+			uint64_t add_result = ctx->regs[inst->rtype.rs] + ctx->regs[inst->rtype.rt];
+			ctx->regs[inst->rtype.rd] =  add_result;
+			if((add_result & 0xFFFFFFFF00000000)) 		//Checks for overflow
+				printf("WARNING: add overflow\n");
 			break;
 		case 0x22: // sub R[rd] = R[rs] - R[rt]
-			ctx->regs[inst->rtype.rd] = ctx->regs[inst->rtype.rs] - ctx->regs[inst->rtype.rt];
-			if(ctx->regs[inst->rtype.rd]<-2147483649) {		//Checks for overflow
-				return 0;
-			}
+			;
+			uint64_t sub_result = ctx->regs[inst->rtype.rs] - ctx->regs[inst->rtype.rt];
+			ctx->regs[inst->rtype.rd] =  sub_result;
+			if((sub_result & 0xFFFFFFFF00000000)) 		//Checks for overflow
+				printf("WARNING: sub overflow\n");
 			break;
 		case 0x24: // and R[rd] = R[rs] & R[rt]
 			ctx->regs[inst->rtype.rd] = ctx->regs[inst->rtype.rs] & ctx->regs[inst->rtype.rt];
@@ -344,11 +346,12 @@ int SimulateItypeInstruction(union mips_instruction* inst, struct virtual_mem_re
 			// printf("DEBUG FINAL 0x%x\n", ctx->regs[inst->itype.rs] + imm);
 			ctx->regs[inst->itype.rt] = ctx->regs[inst->itype.rs] + imm_filled;
 			break;
-		case 0x08:	// Signed R[rt] = R[rs] + SignExtImm
-			ctx->regs[inst->itype.rt] = ctx->regs[inst->itype.rs] + imm_filled;
-			if(ctx->regs[inst->rtype.rt]>2147483647) {		//Checks for overflow
-				return 0;
-			}
+		case 0x08:	// addi Signed R[rt] = R[rs] + SignExtImm
+			;
+			uint64_t result = ctx->regs[inst->itype.rs] + imm_filled;
+			ctx->regs[inst->itype.rt] = result;
+			if((result & 0xFFFFFFFF00000000)) 		//Checks for overflow
+				printf("WARNING: addi overflow\n");
 			break;
 		case 0x0C: //Andi R[rt]=R[rs] & Imm
 			ctx->regs[inst->itype.rt] = ctx->regs[inst->itype.rs] & imm_filled;

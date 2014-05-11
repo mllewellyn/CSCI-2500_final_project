@@ -17,18 +17,17 @@
 		addi a0, zero, 10 # ascii for new line
 		syscall
 		addi v0, zero, 1 # reload for printing int
-		nop  # not entirely sure why this has to be here, bug in the code??
+		# nop  # not entirely sure why this has to be here, bug in the code??
 		j ra
 
 	print_success: 
-		# prints a new line and then puts print int back in v0 to make life easy
+		addi t5, t5, 1 # add 1 to t5, it's the success coutner
 		addi v0, zero, 11
 		addi a0, zero, 'S'
 		syscall
 		addi a0, zero, 10 # ascii for new line
 		syscall
-		nop  # not entirely sure why this has to be here, bug in the code??
-	j ra
+		j ra
 
 
 	# main:
@@ -141,6 +140,7 @@
 	#first don't branch then branch, if ever do branch when shouldn't end early and vis versa
 	addi t0, zero, 254
 	addi t1, zero, 123
+	addi t5, zero, 0
 
 	beq t0, t1, branch_failure
 	jal print_success
@@ -171,12 +171,20 @@
 # BLTZAL
 
 
+	# print total # of successes
 	addi v0, zero, 11
-	addi a0, zero, 'S' # print S so I know branch worked
+	addi a0, zero, 't'
 	syscall
-	addi v0, zero, 1 # reload for printing int
-	nop  # not entirely sure why this has to be here, bug in the code??
-
+	addi a0, zero, 's'
+	syscall
+	addi a0, zero, '='
+	syscall
+	addi v0, zero, 1
+	addi a0, t5, 0
+	syscall
+	addi v0, zero, 11
+	addi a0, zero, 10 # new line
+	syscall
 	# restore ra (don't really have to but want to)
 	addi ra, s1, 0
 	j ra
