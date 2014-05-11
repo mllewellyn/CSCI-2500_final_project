@@ -431,7 +431,7 @@ int SimulateItypeInstruction(union mips_instruction* inst, struct virtual_mem_re
 			break;
 		case 0x07: //bgtz
 			if(ctx->regs[inst->itype.rt]==0x0) {
-				if((int32_t) ctx->regs[inst->itype.rs] > 0) {
+				if((int32_t) ctx->regs[inst->itype.rs] > 0git ) {
 					ctx->pc = ctx->pc + 4 + ((ctx->pc & 0xF0000000) | (inst->itype.imm<<2));
 					return 1; // return early to prevent auto +4
 				}
