@@ -281,7 +281,8 @@ int SimulateRtypeInstruction(union mips_instruction* inst, struct virtual_mem_re
 			}
 			break;
 		case 0x2B: //SLTU R[rd]=R[rs] SLTU R[rt]. Unsigned component not implmenented, not sure how to cast labels as unsigned.
-			if (ctx->regs[inst->rtype.rs] < ctx->regs[inst->rtype.rt]) {
+			;
+			if ((uint32_t)(ctx->regs[inst->rtype.rs]) < (uint32_t)(ctx->regs[inst->rtype.rt])) {
 				ctx->regs[inst->rtype.rd] = 1;
 			} else {
 				ctx->regs[inst->rtype.rd] = 0;
@@ -340,6 +341,42 @@ int SimulateItypeInstruction(union mips_instruction* inst, struct virtual_mem_re
 			// printf("DEBUG FINAL 0x%x\n", ctx->regs[inst->itype.rs] + imm);
 			ctx->regs[inst->itype.rt] = ctx->regs[inst->itype.rs] + imm;
 			break;
+		case 0x08:	// Unsigned R[rt] = R[rs] + SignExtImm
+			;
+			//int32_t imm = signFill(inst->itype.imm, 16);
+			ctx->regs[inst->itype.rt] = ctx->regs[inst->itype.rs] + imm;
+			if(ctx->regs[inst->rtype.rt]>2147483647) {		//Checks for overflow
+				return 0;
+			}
+			break;
+		case 0x0C: //Andi R[rt]=R[rs] & Imm
+			; 
+			ctx->regs[inst->itype.rt] = ctx->regs[inst->itype.rs] & inst->itype.imm;
+			break;
+		case 0x0D: //Ori R[rt]=R[rs] | Imm
+			; 
+			ctx->regs[inst->itype.rt] = ctx->regs[inst->itype.rs] | inst->itype.imm;
+			break;
+		case 0x0E: //XORI R[rt]=R[rs] ^ Imm
+			; 
+			ctx->regs[inst->itype.rt] = ctx->regs[inst->itype.rs] ^ inst->itype.imm;
+			break; 
+		case 0x0A: //SLTI R[rt]=R[rs] SLTI Imm
+			;
+			if (ctx->regs[inst->itype.rs] < inst->itype.imm) {
+				ctx->regs[inst->itype.rt] = 1;
+			} else {
+				ctx->regs[inst->itype.rt] = 0;
+			}
+			break;
+		case 0x0B: //SLTIU R[rt]=R[rs] SLTIU Imm
+			;
+			if ((uint32_t)(ctx->regs[inst->itype.rs]) < (uint32_t)(inst->itype.imm)) {
+				ctx->regs[inst->itype.rt] = 1;
+			} else {
+				ctx->regs[inst->itype.rt] = 0;
+			}
+			break;
 		case OP_LUI: // R[rt] = {imm, 16’b0}
 			//put the 16 bits from the imm into the 16 most sig bits of the target reg, rest are set 0
 			ctx->regs[inst->itype.rt] = inst->itype.imm<<16;
@@ -368,6 +405,52 @@ int SimulateItypeInstruction(union mips_instruction* inst, struct virtual_mem_re
 				return 1; // return early to prevent auto +4
 			}
 			break;
+		case 0x04: // beq if(R[rs]==R[rt]) PC=PC+4+BranchAddr
+			if(ctx->regs[inst->itype.rs] == ctx->regs[inst->itype.rt]) {
+				ctx->pc = ctx->pc + 4 + (ctx->pc & 0xF0000000) | (inst->itype.imm<<2);
+				return 1; // return early to prevent auto +4
+			}
+			break;
+		case 0x01:  //bgez and bltz
+			if(ctx->regs[inst->rtype.rt]==0x1){  //bgez
+				if(ctx->regs[inst->itype.rs] >= 0) {
+					ctx->pc = ctx->pc + 4 + (ctx->pc & 0xF0000000) | (inst->itype.imm<<2);
+					return 1; // return early to prevent auto +4
+				}
+			if(ctx->regs[inst->rtype.rt]==0x0){ // bltz
+				if(ctx->regs[inst->itype.rs] < 0) {
+					ctx->pc = ctx->pc + 4 + (ctx->pc & 0xF0000000) | (inst->itype.imm<<2);
+					return 1; // return early to prevent auto +4
+				}
+
+
+			}
+			
+
+			printf("GOT A BAD BRANCH AND NON-CORRESPONDING REGISTER\n"); //Shouldn't reach this point unless it is a bad instruction call
+			return 0;
+			
+
+			}
+		case 0x06: //blez
+			if(ctx->regs[inst->rtype.rt]==0x0){  
+				if(ctx->regs[inst->itype.rs] <= 0) {
+					ctx->pc = ctx->pc + 4 + (ctx->pc & 0xF0000000) | (inst->itype.imm<<2);
+					return 1; // return early to prevent auto +4
+				}
+			}
+			printf("GOT A BAD REGISTER WITH OPCODE 0x06/n");  //Shouldn't reach this point unless it is a bad instruction call
+			return 0;
+
+		case 0x07: //bgtz
+			if(ctx->regs[inst->rtype.rt]==0x0){  
+				if(ctx->regs[inst->itype.rs] > 0) {
+					ctx->pc = ctx->pc + 4 + (ctx->pc & 0xF0000000) | (inst->itype.imm<<2);
+					return 1; // return early to prevent auto +4
+				}
+			}
+			printf("GOT A BAD REGISTER WITH OPCODE 0x07/n");  //Shouldn't reach this point unless it is a bad instruction call
+			return 0;
 		default:
 			printf("GOT A BAD/UNIMPLIMENTED I TYPE INSTRUCITON\n");
 			return 0; //return this to exit program
