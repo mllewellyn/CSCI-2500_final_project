@@ -17,7 +17,7 @@
 		addi a0, zero, 10 # ascii for new line
 		syscall
 		addi v0, zero, 1 # reload for printing int
-		# nop  # not entirely sure why this has to be here, bug in the code??
+		nop  # not entirely sure why this has to be here, bug in the code??
 		j ra
 
 	print_success: 
@@ -34,9 +34,8 @@
 	__start:
 	# //Simulator loads sp with a valid address before starting program
 
-
-	# jal test_rtype
-	jal test_itype
+	jal test_rtype
+	# jal test_itype
 	j quit
 
 
@@ -248,94 +247,94 @@
 	addi t1, zero, 123
 	addi v0, zero, 1
 	# do some math and print some numbers
-	add a0, t0, t1
-	syscall
-	jal print_newline
+	# add a0, t0, t1
+	# syscall
+	# jal print_newline
 
-	addu a0, t0, t1
-	syscall
-	jal print_newline
+	# addu a0, t0, t1
+	# syscall
+	# jal print_newline
 
-	and a0, t0, t1
-	syscall
-	jal print_newline
+	# and a0, t0, t1
+	# syscall
+	# jal print_newline
 
-	or a0, t0, t1
-	syscall
-	jal print_newline
+	# or a0, t0, t1
+	# syscall
+	# jal print_newline
 
-	sub a0, t0, t1
-	syscall
-	jal print_newline
+	# sub a0, t0, t1
+	# syscall
+	# jal print_newline
 
-	subu a0, t0, t1
-	syscall
-	jal print_newline
+	# subu a0, t0, t1
+	# syscall
+	# jal print_newline
 
-	xor a0, t0, t1
-	syscall
-	jal print_newline
+	# xor a0, t0, t1
+	# syscall
+	# jal print_newline
 
-	# here's where it gets weird
-	slt a0, t0, t1
-	syscall
-	jal print_newline
+	# # here's where it gets weird
+	# slt a0, t0, t1
+	# syscall
+	# jal print_newline
 
-	sltu a0, t0, t1
-	syscall
-	jal print_newline
+	# sltu a0, t0, t1
+	# syscall
+	# jal print_newline
 
-	#also rev slt to make sure it works
-	slt a0, t1, t0
-	syscall
-	jal print_newline
+	# #also rev slt to make sure it works
+	# slt a0, t1, t0
+	# syscall
+	# jal print_newline
 
-	sltu a0, t1, t0
-	syscall
-	jal print_newline
+	# sltu a0, t1, t0
+	# syscall
+	# jal print_newline
 
-	# have smaller shifts
-	addi t1, zero, 3
-	sll a0, t0, 3
-	syscall
-	jal print_newline
+	# # have smaller shifts
+	# addi t1, zero, 3
+	# sll a0, t0, 3
+	# syscall
+	# jal print_newline
 
-	sllv a0, t0, t1
-	syscall
-	jal print_newline
+	# sllv a0, t0, t1
+	# syscall
+	# jal print_newline
 
-	sra a0, t0, 3
-	syscall
-	jal print_newline
+	# sra a0, t0, 3
+	# syscall
+	# jal print_newline
 
-	srl a0, t0, 3
-	syscall
-	jal print_newline
+	# srl a0, t0, 3
+	# syscall
+	# jal print_newline
 
-	srlv a0, t0, t1
-	syscall
-	jal print_newline
+	# srlv a0, t0, t1
+	# syscall
+	# jal print_newline
 
 	# multiply and divide, should have remainders and overflow
 	# load new stuff to keep it interesting
 	addi t0, zero, 2543
 	addi t1, zero, 123
 	# this is being weird
-	# div t0, t1
-	# mfhi a0
-	# syscall
-	# jal print_newline
-	# mflo a0
-	# syscall
-	# jal print_newline
-
-	mult t0, t1
+	div t0, t1
 	mfhi a0
 	syscall
 	jal print_newline
 	mflo a0
 	syscall
 	jal print_newline
+
+	# mult t0, t1
+	# mfhi a0
+	# syscall
+	# jal print_newline
+	# mflo a0
+	# syscall
+	# jal print_newline
 
 	# multu t0, t1
 	# mfhi a0
@@ -344,8 +343,8 @@
 	# mflo a0
 	# syscall
 	# jal print_newline
-	addi ra, s0, 0
-	j ra
+	# addi ra, s0, 0
+	# j ra
 
 branch_failure:
 	# prints a new line and then puts print int back in v0 to make life easy
