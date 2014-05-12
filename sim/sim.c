@@ -273,8 +273,9 @@ int SimulateRtypeInstruction(union mips_instruction* inst, struct virtual_mem_re
 			ctx->hi = (utotal & 0xFFFFFFFF00000000)>>32; // top 32 bits
 			break; 
 		case 0x1a: // div Lo=R[rs]/R[rt]; Hi=R[rs]%R[rt]
-			ctx->lo = ctx->regs[inst->rtype.rs] / ctx->regs[inst->rtype.rt];
-			ctx->hi = ctx->regs[inst->rtype.rs] % ctx->regs[inst->rtype.rt];
+			printf("debug calling div\n");
+			ctx->lo = ((int32_t) ctx->regs[inst->rtype.rs]) / ((int32_t) ctx->regs[inst->rtype.rt]);
+			ctx->hi = ((int32_t) ctx->regs[inst->rtype.rs]) % ((int32_t) ctx->regs[inst->rtype.rt]);
 			break;
 		case 0x26: //XOR R[rd]=R[rs] ^ R[rt]
 			ctx->regs[inst->rtype.rd] = ctx->regs[inst->rtype.rs] ^ ctx->regs[inst->rtype.rt];
@@ -286,9 +287,8 @@ int SimulateRtypeInstruction(union mips_instruction* inst, struct virtual_mem_re
 				ctx->regs[inst->rtype.rd] = 0;
 			}
 			break;
-		case 0x2B: //SLTU R[rd]=R[rs] SLTU R[rt]. Unsigned component not implmenented, not sure how to cast labels as unsigned.
-			;
-			if ((uint32_t)(ctx->regs[inst->rtype.rs]) < (uint32_t)(ctx->regs[inst->rtype.rt])) {
+		case 0x2B: //SLTU R[rd]=R[rs] SLTU R[rt]. registers are unsigned by default
+			if (ctx->regs[inst->rtype.rs] < ctx->regs[inst->rtype.rt]) {
 				ctx->regs[inst->rtype.rd] = 1;
 			} else {
 				ctx->regs[inst->rtype.rd] = 0;
@@ -354,13 +354,13 @@ int SimulateItypeInstruction(union mips_instruction* inst, struct virtual_mem_re
 				printf("WARNING: addi overflow\n");
 			break;
 		case 0x0C: //Andi R[rt]=R[rs] & Imm
-			ctx->regs[inst->itype.rt] = ctx->regs[inst->itype.rs] & imm_filled;
+			ctx->regs[inst->itype.rt] = ctx->regs[inst->itype.rs] & inst->itype.imm;
 			break;
 		case 0x0D: //Ori R[rt]=R[rs] | Imm
-			ctx->regs[inst->itype.rt] = ctx->regs[inst->itype.rs] | imm_filled;
+			ctx->regs[inst->itype.rt] = ctx->regs[inst->itype.rs] | inst->itype.imm;
 			break;
 		case 0x0E: //XORI R[rt]=R[rs] ^ Imm
-			ctx->regs[inst->itype.rt] = ctx->regs[inst->itype.rs] ^ imm_filled;
+			ctx->regs[inst->itype.rt] = ctx->regs[inst->itype.rs] ^ inst->itype.imm;
 			break; 
 		case 0x0A: //SLTI R[rt]=R[rs] SLTI Imm
 			ctx->regs[inst->itype.rt] = (int32_t) ctx->regs[inst->itype.rs] < (int32_t) imm_filled;

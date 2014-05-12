@@ -17,7 +17,7 @@
 		addi a0, zero, 10 # ascii for new line
 		syscall
 		addi v0, zero, 1 # reload for printing int
-		nop  # not entirely sure why this has to be here, bug in the code??
+		nop  # not entirely sure why this has to be here, bug in the code?? without it the above instruction doesn't work
 		j ra
 
 	print_success: 
@@ -320,7 +320,9 @@
 	addi t0, zero, 2543
 	addi t1, zero, 123
 	# this is being weird
-	div t0, t1
+	nop
+	div t0, t1 			# no idea why this isn't being called when assembled, but the c code is working
+	nop
 	mfhi a0
 	syscall
 	jal print_newline
@@ -343,11 +345,12 @@
 	# mflo a0
 	# syscall
 	# jal print_newline
-	# addi ra, s0, 0
-	# j ra
+	
+	addi ra, s0, 0
+	j ra
 
 branch_failure:
-	# prints a new line and then puts print int back in v0 to make life easy
+	# print an F because branching failed
 	addi v0, zero, 11
 	addi a0, zero, 'F'
 	syscall

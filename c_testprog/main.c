@@ -16,12 +16,24 @@ enum syscalls
 
 int main()
 {
-	const char* str = "hello world\n";
-	do_syscall((unsigned int)str, 0, SYS_PRINT_STR);	// print string syscall
-	int a = 1234;
-	do_syscall((unsigned int)a, 0, 1); 	//print int syscall
-	char c = 'h';
-	do_syscall((unsigned int)c, 0, 11);	//print char syscall
+
+
+	const char* str1 = "\n i =";
+	const char* str2 = "\n i/3 =";
+	const char* str3 = "\n i%3 =";
+	
+	int i;
+	for(i=0; i<5; ++i) {
+		do_syscall((unsigned int)str1, 0, SYS_PRINT_STR);	// print string syscall
+		do_syscall((unsigned int)i, 0, 1); 	//print int syscall
+		do_syscall((unsigned int)str2, 0, SYS_PRINT_STR);	// print string syscall
+		do_syscall((unsigned int)i/3, 0, 1); 	//print int syscall
+		do_syscall((unsigned int)str3, 0, SYS_PRINT_STR);	// print string syscall
+		do_syscall((unsigned int)i%3, 0, 1); 	//print int syscall
+	}
+	
+	// char c = 'h';
+	// do_syscall((unsigned int)c, 0, 11);	//print char syscall
 	
 	return 0;
 }
