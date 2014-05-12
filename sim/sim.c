@@ -354,13 +354,13 @@ int SimulateItypeInstruction(union mips_instruction* inst, struct virtual_mem_re
 				printf("WARNING: addi overflow\n");
 			break;
 		case 0x0C: //Andi R[rt]=R[rs] & Imm
-			ctx->regs[inst->itype.rt] = ctx->regs[inst->itype.rs] & imm_filled;
+			ctx->regs[inst->itype.rt] = ctx->regs[inst->itype.rs] & inst->itype.imm;
 			break;
 		case 0x0D: //Ori R[rt]=R[rs] | Imm
 			ctx->regs[inst->itype.rt] = ctx->regs[inst->itype.rs] | inst->itype.imm;
 			break;
 		case 0x0E: //XORI R[rt]=R[rs] ^ Imm
-			ctx->regs[inst->itype.rt] = ctx->regs[inst->itype.rs] ^ imm_filled;
+			ctx->regs[inst->itype.rt] = ctx->regs[inst->itype.rs] ^ inst->itype.imm;
 			break; 
 		case 0x0A: //SLTI R[rt]=R[rs] SLTI Imm
 			ctx->regs[inst->itype.rt] = (int32_t) ctx->regs[inst->itype.rs] < (int32_t) imm_filled;
