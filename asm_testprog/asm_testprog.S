@@ -35,8 +35,7 @@
 	# //Simulator loads sp with a valid address before starting program
 	
 	jal test_rtype
-	# jal test_itype
-	# jal itype_alu
+	jal test_itype
 	j quit
 
 
@@ -47,12 +46,13 @@
 	# I branch: BEQ, BGEZ, BGTZ, BLEZ, BLTZ, BNE, BGEZAL, BLTZAL
 	# I load/store: LB, LW, SB, SW
 
-	# jal itype_alu
+	jal itype_alu
 	jal itype_branch
 
 	# restore ra (don't really have to but want to)
 	addi ra, s0, 0
 	jr ra
+	
 
 	itype_alu:
 	# start by storing ra

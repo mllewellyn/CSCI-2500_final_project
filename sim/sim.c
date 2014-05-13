@@ -85,6 +85,7 @@ void RunSimulator(struct virtual_mem_region* memory, struct context* ctx)
 	counters.rtypes = 0;
 	counters.itypes = 0;
 	counters.jtypes = 0;
+	counters.syscalls = 0;
 	counters.elapsed_time = 0;
 	clock_in(&counters);
 
@@ -222,14 +223,18 @@ int SimulateInstruction(union mips_instruction* inst, struct virtual_mem_region*
 	int result;
 	int type = determineInstType(inst);
 	if(type == 1) {
+		counters->syscalls++;
 		result = SimulateSyscall(memory, ctx, counters, debug_log_file);
 	} else if(type == 2) {
+		counters->rtypes++;
 		result = SimulateRtypeInstruction(inst, memory, ctx);
 	// not R type or the only J type, must be I type, could also do or on I types but lazy
 	} else if(type == 3) {
+		counters->itypes++;
 		result = SimulateItypeInstruction(inst, memory, ctx);
 	// check for j type
 	} else if(type == 4) {
+		counters->jtypes++;
 		result = SimulateJtypeInstruction(inst, memory, ctx);
 	} else {
 		printf("Couldn't find the type of instruction THIS IS AN ERROR, exiting");
@@ -589,7 +594,7 @@ int SimulateSyscall(struct virtual_mem_region* memory, struct context* ctx, stru
 	return 1;
 }
 
-void print_log(struct logging_counters* counters, FILE** log_file) {git 
+void print_log(struct logging_counters* counters, FILE** log_file) {
 	fprintf(*log_file, "Time elapsed:\n    note: max accucary seems to be 0.01s\n");
 	fprintf(*log_file, "    'clocks' elapsed: %lu\n", counters->elapsed_time);
 	fprintf(*log_file, "    seconds elapsed: %f\n", ((float) counters->elapsed_time) / CLOCKS_PER_SEC);
