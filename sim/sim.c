@@ -408,7 +408,7 @@ int SimulateItypeInstruction(union mips_instruction* inst, struct virtual_mem_re
 			sb_word = sb_word | (ctx->regs[inst->itype.rt] & 0x7F); // or with 7 smallest bytes of rt
 			StoreWordToVirtualMemory(ctx->regs[inst->itype.rs] + inst->itype.imm, sb_word, memory);
 			break;
-		case 0x29: //Sh store halfword
+		case 0x29: //sh store halfword
 			; int32_t sh_word = FetchWordFromVirtualMemory(ctx->regs[inst->itype.rs] + inst->itype.imm, memory);
 			sh_word = sh_word & !0xFFFF; // wipe out the 16 least significant bits
 			sh_word = sh_word | (ctx->regs[inst->itype.rt] & 0xFFFF); // or with 16 least significant bits
