@@ -24,9 +24,9 @@ int r_tests( unsigned int a, unsigned int b){
 void div_loop_test() {
 	const char* str1 = "\n    i= ";
 	const char* str2 = "\n  i/3= ";
-	const char* str3 = "\n  i%3= ";
+	const char* str3 = "\n  i3= ";
 	const char* str4 = "\n i/-3= ";
-	const char* str5 = "\n i%-3= ";
+	const char* str5 = "\n i-3= ";
 	
 	int i;
 	for(i=0; i<5; ++i) {

@@ -417,10 +417,16 @@ int SimulateItypeInstruction(union mips_instruction* inst, struct virtual_mem_re
 			break;
 		case 0x28: // sb: store byte M[R[rs]+SignExtImm](7:0) = R[rt](7:0)
 			; // nop for switch
-			int32_t word = FetchWordFromVirtualMemory(ctx->regs[inst->itype.rs] + inst->itype.imm, memory);
-			word = word & !0x7F; // wipe out 7 smallest bytes
-			word = word | (ctx->regs[inst->itype.rt] & 0x7F); // or with 7 smallest bytes of rt
-			StoreWordToVirtualMemory(ctx->regs[inst->itype.rs] + inst->itype.imm, word, memory);
+			int32_t sb_word = FetchWordFromVirtualMemory(ctx->regs[inst->itype.rs] + inst->itype.imm, memory);
+			sb_word = sb_word & !0x7F; // wipe out 7 smallest bytes
+			sb_word = sb_word | (ctx->regs[inst->itype.rt] & 0x7F); // or with 7 smallest bytes of rt
+			StoreWordToVirtualMemory(ctx->regs[inst->itype.rs] + inst->itype.imm, sb_word, memory);
+			break;
+		case 0x29: //sh store halfword
+			; int32_t sh_word = FetchWordFromVirtualMemory(ctx->regs[inst->itype.rs] + inst->itype.imm, memory);
+			sh_word = sh_word & !0xFFFF; // wipe out the 16 least significant bits
+			sh_word = sh_word | (ctx->regs[inst->itype.rt] & 0xFFFF); // or with 16 least significant bits
+			StoreWordToVirtualMemory(ctx->regs[inst->itype.rs] + inst->itype.imm, sh_word, memory);
 			break;
 		case 0x20: // lb: load byte R[rt] (7:0)=M[R[rs]+SignExtImm](7:0)
 			;
@@ -451,7 +457,7 @@ int SimulateItypeInstruction(union mips_instruction* inst, struct virtual_mem_re
 				if ((int32_t) ctx->regs[inst->itype.rs] < 0) { //bltz
 					ctx->pc = ctx->pc + 4 + (imm_filled<<2);
 					return 1; // return early to prevent auto +4
-				}	   
+				}
 			} else if(inst->itype.rt==0x11) { //BGEZAL
 				if((int32_t) ctx->regs[inst->itype.rs]>=0){
 					ctx->regs[ra]=ctx->pc+4;

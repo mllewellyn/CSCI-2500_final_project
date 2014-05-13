@@ -3,3 +3,5 @@
 *.elf
 sim.out
 c_testprog/main.o
+*sim_debug_log.txt
+*simlog.txt

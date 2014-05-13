@@ -10,6 +10,13 @@
 .globl __start
 # uncomment for qtspim, also put in freaking 
 # .globl main
+	__start:
+	# main:
+	# //Simulator loads sp with a valid address before starting program
+	
+	jal test_rtype
+	jal test_itype
+	j quit
 
 	print_newline: 
 		# prints a new line and then puts print int back in v0 to make life easy
@@ -30,25 +37,14 @@
 		syscall
 		jr ra
 
-	# main:
-	__start:
-	# //Simulator loads sp with a valid address before starting program
-	
-	jal test_rtype
-	jal test_itype
-	j quit
-
-
 	test_itype:
 	# start by storing ra
 	addi s0, ra, 0
 	# I ALU: ADDI, ADDIU, ANDI, LUI, ORI, XORIc, SLTI, SLTIU
 	# I branch: BEQ, BGEZ, BGTZ, BLEZ, BLTZ, BNE, BGEZAL, BLTZAL
 	# I load/store: LB, LW, SB, SW
-
 	jal itype_alu
 	jal itype_branch
-
 	# restore ra (don't really have to but want to)
 	addi ra, s0, 0
 	jr ra
@@ -70,6 +66,7 @@
 	jal print_newline
 
 	addiu a0, t0, 12345
+	sh a0, 0(t0)
 	syscall
 	jal print_newline
 
@@ -237,11 +234,13 @@
 	addi ra, s1, 0
 	jr ra
 
+	
 	test_rtype:
 	# test R type alu instrucitons
 	# R ALU: ADD, ADDU, AND, OR, SUB, SUBU, XOR, SLT, SLTU, SLL, SLLV,
 	# 	SRA, SRL, SRLV, DIV, DIVtest_rtypeU, MULT, MULTU
 	# start by storing ra, yes this is lazy it's oaky
+	
 	addi s0, ra, 0
 	# load numbers into t0 and t1 and v0 to start
 	addi t0, zero, 254
@@ -387,7 +386,13 @@
 	# jal print_newline
 
 	addi ra, s0, 0
+
+	j ra
+test: 
+	addi a0, zero, 'A'
+	syscall
 	jr ra
+
 
 branch_failure:
 	# print an F because branching failed
