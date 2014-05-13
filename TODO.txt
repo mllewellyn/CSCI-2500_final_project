@@ -26,4 +26,10 @@ J jump: J, JAL
 	test code: done
 
  -- syscall -- 
- ?????
+	exit
+		done tested
+	print int char stirng
+		done tested
+	read int char
+		done tested
+	not doing any more

@@ -6,7 +6,7 @@
 #include "sim.h"
 // Other includes and debug constant
 #include <stdbool.h>
-const bool debug_mode = false;
+const bool debug_mode = true;
 
 /**
 	@brief Read logic for instruction fetch and load instructions
@@ -410,12 +410,11 @@ int SimulateItypeInstruction(union mips_instruction* inst, struct virtual_mem_re
 			break;
 		case 0x20: // lb: load byte R[rt] (7:0)=M[R[rs]+SignExtImm](7:0)
 			;
-			int32_t lb_temp=FetchWordFromVirtualMemory(ctx->regs[inst->itype.rs] + inst->itype.imm, memory);
+			int32_t lb_temp = FetchWordFromVirtualMemory(ctx->regs[inst->itype.rs] + inst->itype.imm, memory);
 			lb_temp=lb_temp & !0x7F; //wipe out 7 smallest bytes
 			lb_temp=lb_temp | (ctx->regs[inst->itype.rs]);
 			ctx->regs[inst->itype.rt]=lb_temp;
 			break;
-	
 		case 0x05: // bne if(R[rs]!=R[rt]) PC=PC+4+BranchAddr
 			if(ctx->regs[inst->itype.rs] != ctx->regs[inst->itype.rt]) {
 				ctx->pc = ctx->pc + 4 + (imm_filled<<2);
@@ -438,21 +437,18 @@ int SimulateItypeInstruction(union mips_instruction* inst, struct virtual_mem_re
 				if ((int32_t) ctx->regs[inst->itype.rs] < 0) { //bltz
 					ctx->pc = ctx->pc + 4 + (imm_filled<<2);
 					return 1; // return early to prevent auto +4
-				}
-			   
+				}	   
 			} else if(inst->itype.rt==0x11) { //BGEZAL
 				if((int32_t) ctx->regs[inst->itype.rs]>=0){
 					ctx->regs[ra]=ctx->pc+4;
 					ctx->pc = ctx->pc + 4 + ((ctx->pc & 0xF0000000) | (inst->itype.imm<<2));
 					return 1; //return early to prevent auto +4
 				}
-
 			} else if(inst->itype.rt==0x10) { //BLTZAL
 				if((int32_t)ctx->regs[inst->itype.rs]<=0){
 					ctx->regs[ra]=ctx->pc+4;
 					ctx->pc = ctx->pc + 4 + ((ctx->pc & 0xF0000000) | (inst->itype.imm<<2));
 					return 1; //return early to prevent auto +4
-
 				}
 			}
 			else {
@@ -544,12 +540,30 @@ int SimulateSyscall(struct virtual_mem_region* memory, struct context* ctx)
 				addr += 4;
 			}
 			break;
+		case 5: //read int
+			// $v0 contains integer read
+			; int result_int;
+			scanf("%d", &result_int);
+			ctx->regs[v0] = result_int;
+			break;
+		case 8: // read string
+			// $a0 = address of input buffer (in real or fake life>>)
+			// $a1 = maximum number of characters to read
+			// implimentation is purley ceremonial becaues not going to alloc memmory because not worth it
+			// TODO: some bs with scanf
+			break;		
 		case 10: //exit program
 			return 0;
 			break;
 		case 11: // print char
 			printf("%c", ctx->regs[a0]);
 			// printf("\n"); //this is just for debugging
+			break;
+		case 12: // read char
+			// $v0 contains character read
+			; char result_char;
+			scanf("%c", &result_char);
+			ctx->regs[v0] = result_char;
 			break;
 		default:
 			printf("GOT A BAD/UNIMPLIMENTED SYSCALL\n");

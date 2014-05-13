@@ -21,7 +21,7 @@ int r_tests( unsigned int a, unsigned int b){
 	return 0;
 }
 
-void max_tests() {
+void div_loop_test() {
 	const char* str1 = "\n    i= ";
 	const char* str2 = "\n  i/3= ";
 	const char* str3 = "\n  i%3= ";
@@ -46,8 +46,7 @@ void max_tests() {
 	}
 }
 
-int main()
-{
+void crap_that_used_to_be_in_main() {
 	const char* str = "hello world\n";
 	do_syscall((unsigned int)str, 0, SYS_PRINT_STR);	// print string syscall
 	unsigned int a = 1234;
@@ -66,6 +65,28 @@ int main()
 	//do_syscall((unsigned int)a, 0, 1); 	//print int syscall
 	char c = 'h';
 	do_syscall((unsigned int)c, 0, 11);	//print char syscall
+}
+
+void input_tests() {
+	// not gonna read a string because that requires allocing memmory which is NOT gonna happen
+	// read and print char
+	char c;
+	c = do_syscall(0, 0, 12); // do_syscall returns v0
+	// and print it
+	do_syscall((unsigned int) c, 0, 11);
+	// read and print char
+	int a;
+	a = do_syscall(0, 0, 5); // do_syscall returns v0
+	// and print it
+	do_syscall((unsigned int) a, 0, 1);
+
+}
+
+int main()
+{
+	// crap_that_used_to_be_in_main();
+	// div_loop_test();
+	input_tests();
 	
 	return 0;
 }
