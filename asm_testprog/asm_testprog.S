@@ -65,11 +65,6 @@
 	syscall
 	jal print_newline
 
-	addiu a0, t0, 12345
-	sh a0, 0(t0)
-	syscall
-	jal print_newline
-
 	addiu a0, t0, -12345 # not sure what this should do think the same thing
 	syscall
 	jal print_newline

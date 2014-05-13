@@ -146,10 +146,10 @@ struct logging_counters
 	uint32_t jtypes;
 	uint32_t syscalls;
 	// time vars
-	clock_t in_time; // most recent clock in
-	clock_t out_time; // most recent clock out
-	// struct timespec in_time; // most recent clock in
-	// struct timespec out_time; // most recent clock out1
+	// clock_t in_time; // most recent clock in
+	// clock_t out_time; // most recent clock out
+	struct timespec in_time; // most recent clock in
+	struct timespec out_time; // most recent clock out1
 	uint64_t elapsed_time;
 };
 

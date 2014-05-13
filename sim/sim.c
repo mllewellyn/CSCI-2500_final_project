@@ -420,6 +420,13 @@ int SimulateItypeInstruction(union mips_instruction* inst, struct virtual_mem_re
 			sb_word = sb_word | (ctx->regs[inst->itype.rt] & 0x7F); // or with 7 smallest bytes of rt
 			StoreWordToVirtualMemory(ctx->regs[inst->itype.rs] + inst->itype.imm, sb_word, memory);
 			break;
+		// this is not required so not going to debug it
+		/*case 0x29: //sh store halfword
+			; int32_t sh_word = FetchWordFromVirtualMemory(ctx->regs[inst->itype.rs] + inst->itype.imm, memory);
+			sh_word = sh_word & !0xFFFF0000; // wipe out the 16 most significant bits
+			sh_word = sh_word | (ctx->regs[inst->itype.rt] & 0xFFFF); // or with 16 least significant bits
+			StoreWordToVirtualMemory(ctx->regs[inst->itype.rs] + inst->itype.imm, sh_word, memory);
+			break;*/
 		case 0x05: // bne if(R[rs]!=R[rt]) PC=PC+4+BranchAddr
 			if(ctx->regs[inst->itype.rs] != ctx->regs[inst->itype.rt]) {
 				ctx->pc = ctx->pc + 4 + (imm_filled<<2);
@@ -584,9 +591,8 @@ int SimulateSyscall(struct virtual_mem_region* memory, struct context* ctx, stru
 }
 
 void print_log(struct logging_counters* counters, FILE** log_file) {
-	fprintf(*log_file, "Time elapsed:\n    note: max accucary seems to be 0.01s\n");
-	fprintf(*log_file, "    'clocks' elapsed: %lu\n", counters->elapsed_time);
-	fprintf(*log_file, "    seconds elapsed: %f\n", ((float) counters->elapsed_time) / CLOCKS_PER_SEC);
+	//elapsed time is in ns
+	fprintf(*log_file, "Time elapsed (s): %f\n", ((float) counters->elapsed_time) / 1000000000);
 	fprintf(*log_file, "\nInstructions simulated:\n");
 	fprintf(*log_file, "    R type:   %d\n", counters->rtypes);
 	fprintf(*log_file, "    I type:   %d\n", counters->itypes);
@@ -595,15 +601,10 @@ void print_log(struct logging_counters* counters, FILE** log_file) {
 }
 
 void clock_in(struct logging_counters* counters) {
-	// clock_gettime(CLOCK_REALTIME, &(counters->in_time);
-	counters->in_time = clock();
-	// printf("Clocking in at %lu\n", counters->in_time);
+	clock_gettime(CLOCK_REALTIME, &(counters->in_time));
 }
 
 void clock_out(struct logging_counters* counters) {
-	// clock_gettime(CLOCK_REALTIME, &(counters->out_time);
-	// counters->elapsed_time += counters->out_time.tv_nsec - counters->in_time.tv_nsec;
-	counters->out_time = clock();
-	// printf("Clocking out at %lu\n", counters->out_time);
-	counters->elapsed_time += counters->out_time - counters->in_time;
+	clock_gettime(CLOCK_REALTIME, &(counters->out_time));
+	counters->elapsed_time += counters->out_time.tv_nsec - counters->in_time.tv_nsec;
 }
