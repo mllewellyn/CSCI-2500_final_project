@@ -482,6 +482,13 @@ int SimulateItypeInstruction(union mips_instruction* inst, struct virtual_mem_re
 				return 0;
 			}
 			break;
+		case 0x29: //Sh
+			;
+			int32_t sh_temp=ctx->regs[inst->itype.rs] + inst->itype.imm;
+			sh_temp= sh_temp & !0x7FFF;
+			// ctx->regs[inst->itype.rs] + inst->itype.imm= & !0x7FFF; //wipe out top 16 bytes
+			StoreWordToVirtualMemory(sh_temp, ctx->regs[inst->itype.rt], memory);
+
 		default:
 			printf("GOT A BAD/UNIMPLIMENTED I TYPE INSTRUCITON\n");
 			return 0; //return this to exit program

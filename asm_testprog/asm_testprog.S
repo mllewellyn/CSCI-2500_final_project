@@ -36,13 +36,15 @@ string1: 	.asciiz "Print this. \n"
 					.text
 	__start:		li v0, 4
 					la a0, string1
+					li t1, 5
+					sh a2, 0(t1)
 					syscall
 	# //Simulator loads sp with a valid address before starting program
 
 
 	#jal test_rtype
-	sub s0, ra, 500
-	bltzal s0, test_itype
+	#sub s0, ra, 500
+	#bltzal s0, test_itype
 	#  jal test_itype
 	#jal itype_alu
 
@@ -51,7 +53,7 @@ string1: 	.asciiz "Print this. \n"
 	# main:
 	# //Simulator loads sp with a valid address before starting program
 	
-	jal test_rtype
+	#jal test_rtype
 	# jal test_itype
 	# jal itype_alu
 
@@ -108,6 +110,7 @@ string1: 	.asciiz "Print this. \n"
 	jal print_newline
 
 	addiu a0, t0, 12345
+	sh a0, 0(t0)
 	syscall
 	jal print_newline
 
@@ -293,17 +296,17 @@ string1: 	.asciiz "Print this. \n"
 
 	addi v0, zero, 1
 	# do some math and print some numbers
-	# add a0, t0, t1
-	# syscall
-	# jal print_newline
+	 add a0, t0, t1
+	 syscall
+	 jal print_newline
 
-	# addu a0, t0, t1
-	# syscall
-	# jal print_newline
+	 addu a0, t0, t1
+	 syscall
+	 jal print_newline
 
-	# and a0, t0, t1
-	# syscall
-	# jal print_newline
+	 and a0, t0, t1
+	 syscall
+	 jal print_newline
 
 	# or a0, t0, t1
 	# syscall
