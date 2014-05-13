@@ -59,9 +59,10 @@ string1: 	.asciiz "Print this. \n"
 
 
 	test_itype:
-	#la t1, array1
 	# start by storing ra
-	#addi s0, ra, 0
+	addi s0, ra, 0
+
+	#la t1, array1
 	#la t0, array1
 	#li t1, 5
 	#sw t1, t0
