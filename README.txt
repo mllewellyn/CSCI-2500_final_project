@@ -4,6 +4,8 @@ Love note to TA:
 	so that didn't make any sense. We added a check for div by 0 in our code to keep things stable.
 	If you're at all interested in the git history of the project here's the github page https://github.com/mllewellyn/CSCI-2500_final_project
 
+	Be sure to checkout sim_debug_log.txt for a list of all commands and syscalls.
+
 	-Max and Andrew
 
 Directory structure
