@@ -244,109 +244,147 @@
 	# start by storing ra, yes this is lazy it's oaky
 	addi s0, ra, 0
 	# load numbers into t0 and t1 and v0 to start
-	# addi t0, zero, 254
-	# addi t1, zero, 123
+	addi t0, zero, 254
+	addi t1, zero, 123
 	addi v0, zero, 1
 	# do some math and print some numbers
-	# add a0, t0, t1
-	# syscall
-	# jal print_newline
+	add a0, t0, t1
+	syscall
+	jal print_newline
 
-	# addu a0, t0, t1
-	# syscall
-	# jal print_newline
+	addu a0, t0, t1
+	syscall
+	jal print_newline
 
-	# and a0, t0, t1
-	# syscall
-	# jal print_newline
+	and a0, t0, t1
+	syscall
+	jal print_newline
 
-	# or a0, t0, t1
-	# syscall
-	# jal print_newline
+	or a0, t0, t1
+	syscall
+	jal print_newline
 
-	# sub a0, t0, t1
-	# syscall
-	# jal print_newline
+	sub a0, t0, t1
+	syscall
+	jal print_newline
 
-	# subu a0, t0, t1
-	# syscall
-	# jal print_newline
+	subu a0, t0, t1
+	syscall
+	jal print_newline
 
-	# xor a0, t0, t1
-	# syscall
-	# jal print_newline
+	xor a0, t0, t1
+	syscall
+	jal print_newline
 
-	# # here's where it gets weird
-	# slt a0, t0, t1
-	# syscall
-	# jal print_newline
+	# here's where it gets weird
+	slt a0, t0, t1
+	syscall
+	jal print_newline
 
-	# sltu a0, t0, t1
-	# syscall
-	# jal print_newline
+	sltu a0, t0, t1
+	syscall
+	jal print_newline
 
-	# #also rev slt to make sure it works
-	# slt a0, t1, t0
-	# syscall
-	# jal print_newline
+	#also rev slt to make sure it works
+	slt a0, t1, t0
+	syscall
+	jal print_newline
 
-	# sltu a0, t1, t0
-	# syscall
-	# jal print_newline
+	sltu a0, t1, t0
+	syscall
+	jal print_newline
 
-	# # have smaller shifts
-	# addi t1, zero, 3
-	# sll a0, t0, 3
-	# syscall
-	# jal print_newline
+	# have smaller shifts
+	addi t1, zero, 3
+	sll a0, t0, 3
+	syscall
+	jal print_newline
 
-	# sllv a0, t0, t1
-	# syscall
-	# jal print_newline
+	sllv a0, t0, t1
+	syscall
+	jal print_newline
 
-	# sra a0, t0, 3
-	# syscall
-	# jal print_newline
+	sra a0, t0, 3
+	syscall
+	jal print_newline
 
-	# srl a0, t0, 3
-	# syscall
-	# jal print_newline
+	srl a0, t0, 3
+	syscall
+	jal print_newline
 
-	# srlv a0, t0, t1
-	# syscall
-	# jal print_newline
+	srlv a0, t0, t1
+	syscall
+	jal print_newline
 
 	# multiply and divide, should have remainders and overflow
 	# load new stuff to keep it interesting
-	addi t0, zero, 2543
-	addi t1, zero, 0
-
-	# mult t0, t1
-	# mfhi a0
-	# syscall
-	# jal print_newline
-	# mflo a0
-	# syscall
-	# jal print_newline
-
-	# multu t0, t1
-	# mfhi a0
-	# syscall
-	# jal print_newline
-	# mflo a0
-	# syscall
-	# jal print_newline
-	
-	# this is being weird
-	nop
-	div t0, t1 			# no idea why this isn't being called when assembled
-	nop
-	mfhi a0
+	lui t0, 0x688
+	addi t0, t0, 0xEBAB
+	addi t1, zero, 1234
+	# print the numbers that are gonna be mul and div
+	or a0, t0, zero
+	syscall
+	addi v0, zero, 11
+	addi a0, zero, '*'
+	syscall
+	or a0, t1, zero
+	addi v0, zero, 1
 	syscall
 	jal print_newline
+
+	mult t0, t1
 	mflo a0
 	syscall
 	jal print_newline
+	mfhi a0
+	syscall
+	jal print_newline
+
+	multu t0, t1
+	mflo a0
+	syscall
+	jal print_newline
+	mfhi a0
+	syscall
+	jal print_newline
+
+	addi t1, zero, -1234
+		# print the numbers that are gonna be mul and div
+	or a0, t0, zero
+	syscall
+	addi v0, zero, 11
+	addi a0, zero, '*'
+	syscall
+	or a0, t1, zero
+	addi v0, zero, 1
+	syscall
+	jal print_newline
+
+	mult t0, t1
+	mflo a0
+	syscall
+	jal print_newline
+	mfhi a0
+	syscall
+	jal print_newline
+
+	multu t0, t1
+	mflo a0
+	syscall
+	jal print_newline
+	mfhi a0
+	syscall
+	jal print_newline
+	
+	# addi t1, zero, 1234
+	# this is being weird
+	# div t0, t1 			# this is only being called if weird stuff
+	# mfhi a0
+	# syscall
+	# jal print_newline
+	# mflo a0
+	# syscall
+	# jal print_newline
 
 	addi ra, s0, 0
 	jr ra

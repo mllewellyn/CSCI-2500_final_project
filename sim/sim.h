@@ -14,6 +14,7 @@
 #include <stdlib.h>
 #include <stdint.h>
 #include <linux/elf.h>
+#include <time.h>
 
 ///////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 // Opcode table
@@ -137,21 +138,37 @@ void ReadELF(const char* fname, struct virtual_mem_region** memory, struct conte
 ///////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 // Simulator core
 
+struct logging_counters
+{
+	// instruction  counts
+	uint32_t rtypes;
+	uint32_t itypes;
+	uint32_t jtypes;
+	// time vars
+	time_t in_time; // most recent clock in
+	time_t out_time; // most recent clock out
+	time_t elapsed_time;
+};
+
 void RunSimulator(struct virtual_mem_region* memory, struct context* ctx);
 
 uint32_t FetchWordFromVirtualMemory(uint32_t address, struct virtual_mem_region* memory);
 void StoreWordToVirtualMemory(uint32_t address, uint32_t value, struct virtual_mem_region* memory);
 
-int SimulateInstruction(union mips_instruction* inst, struct virtual_mem_region* memory, struct context* ctx);
+int SimulateInstruction(union mips_instruction* inst, struct virtual_mem_region* memory, struct context* ctx, 
+	struct logging_counters* counters, FILE** debug_log_file);
 int SimulateRtypeInstruction(union mips_instruction* inst, struct virtual_mem_region* memory, struct context* ctx);
 int SimulateItypeInstruction(union mips_instruction* inst, struct virtual_mem_region* memory, struct context* ctx);
 int SimulateJtypeInstruction(union mips_instruction* inst, struct virtual_mem_region* memory, struct context* ctx);
-int SimulateSyscall(struct virtual_mem_region* memory, struct context* ctx);
+int SimulateSyscall(struct virtual_mem_region* memory, struct context* ctx, struct logging_counters* counters, FILE** debug_log_file);
 
 //debug functions
 int determineInstType(union mips_instruction* inst);
-void printInstBits(union mips_instruction* inst);
-void printInstHex(union mips_instruction* inst);
+void printInstBits(union mips_instruction* inst, struct logging_counters* counters, FILE** debug_log_file);
+void printInstHex(union mips_instruction* inst, struct logging_counters* counters, FILE** debug_log_file);
 int32_t signFill(int32_t val, int orig_bits);
+
+//logging functions
+void print_log(struct logging_counters* counters, FILE** log_file);
 
 #endif

@@ -4,10 +4,8 @@
 	@brief The core of the simulator
  */
 #include "sim.h"
-// Other includes and debug constant
+// I like my bools
 #include <stdbool.h>
-const bool debug_mode = true;
-
 /**
 	@brief Read logic for instruction fetch and load instructions
 	
@@ -81,18 +79,30 @@ void StoreWordToVirtualMemory(uint32_t address, uint32_t value, struct virtual_m
 void RunSimulator(struct virtual_mem_region* memory, struct context* ctx)
 {
 	printf("Starting simulation...\n");
-	
+	FILE* debug_log_file = fopen("sim_debug_log.txt", "w");
+	FILE* log_file = fopen("simlog.txt", "w");
+	struct logging_counters counters;
+	counters.rtypes = 0;
+	counters.itypes = 0;
+	counters.jtypes = 0;
+	time(&counters.in_time); // set in time
+
 	union mips_instruction inst;
 	while(1)
 	{
-		//print pc counter for debugging
-		if(debug_mode)
-			printf("(0x%X) ", ctx->pc);
+		//print pc counter in the debug log
+		fprintf(debug_log_file, "(0x%X) ", ctx->pc);
 
 		inst.word = FetchWordFromVirtualMemory(ctx->pc, memory);
-		if(!SimulateInstruction(&inst, memory, ctx))
+		if(!SimulateInstruction(&inst, memory, ctx, &counters, &debug_log_file))
 			break;
 	}
+
+	// write to log flie
+
+	// close files
+	fclose(debug_log_file);
+	fclose(log_file);
 }
 
 /**
@@ -121,9 +131,9 @@ int determineInstType(union mips_instruction* inst) {
 	}
 }
 
-void printInstBits(union mips_instruction* inst) {
+void printInstBits(union mips_instruction* inst, struct logging_counters* counters, FILE** debug_log_file) {
 	uint32_t inst_word = inst->word;
-	printf("DEBUG inst: ");
+	fprintf(*debug_log_file, "DEBUG inst: ");
 	int i;
 	uint32_t reversed = 0;
 	//because I'm really freaking lazy
@@ -133,7 +143,7 @@ void printInstBits(union mips_instruction* inst) {
 	}
 	int type = determineInstType(inst);
 	for(i=0; i<sizeof(reversed)*8; ++i) {
-		printf("%d", reversed%2);
+		fprintf(*debug_log_file, "%d", reversed%2);
 		reversed = reversed>>1;
 		//add spacing so it's easier to read, first check for R type
 		if(type != 1 && ((type == 2 && (i==31-6 || i==31-11 || i==31-16 || i==31-21 || i==31-26)) ||
@@ -141,45 +151,45 @@ void printInstBits(union mips_instruction* inst) {
 			(type == 4 && i==31-26) ||
 			//all other are I type
 			(type == 3 && (i==31-16 || i==31-21 || i==31-26)) ) ) {
-			printf(" ");
+			fprintf(*debug_log_file, " ");
 		}
 	}
-	printf("\n");
+	fprintf(*debug_log_file, "\n");
 }
 
-void printInstHex(union mips_instruction* inst) {
+void printInstHex(union mips_instruction* inst, struct logging_counters* counters, FILE** debug_log_file) {
 	int type = determineInstType(inst);
 	//check for syscall
 	if(type == 1) {
-		printf("DEBUG syscall\n");
+		fprintf(*debug_log_file, "DEBUG syscall\n");
 		return;
 	// R type
 	} else if(type == 2) {
-		printf("DEBUG R type ");
-		printf("opcode:0x%02X ",inst->rtype.opcode);
-		printf("rs:0x%02X ",inst->rtype.rs);
-		printf("rt:0x%02X ",inst->rtype.rt);
-		printf("rd:0x%02X ",inst->rtype.rd);
-		printf("shamt:0x%02X ",inst->rtype.shamt);
-		printf("func:0x%02X",inst->rtype.func);
+		fprintf(*debug_log_file, "DEBUG R type ");
+		fprintf(*debug_log_file, "opcode:0x%02X ",inst->rtype.opcode);
+		fprintf(*debug_log_file, "rs:0x%02X ",inst->rtype.rs);
+		fprintf(*debug_log_file, "rt:0x%02X ",inst->rtype.rt);
+		fprintf(*debug_log_file, "rd:0x%02X ",inst->rtype.rd);
+		fprintf(*debug_log_file, "shamt:0x%02X ",inst->rtype.shamt);
+		fprintf(*debug_log_file, "func:0x%02X",inst->rtype.func);
 	// I type
 	} else if(type == 3) {
-		printf("DEBUG I type ");
-		printf("opcode:0x%02X ", inst->itype.opcode);
-		printf("rs:0x%02X ", inst->itype.rs);
-		printf("rt:0x%02X ", inst->itype.rt);
-		printf("imm:0x%04X", inst->itype.imm);
+		fprintf(*debug_log_file, "DEBUG I type ");
+		fprintf(*debug_log_file, "opcode:0x%02X ", inst->itype.opcode);
+		fprintf(*debug_log_file, "rs:0x%02X ", inst->itype.rs);
+		fprintf(*debug_log_file, "rt:0x%02X ", inst->itype.rt);
+		fprintf(*debug_log_file, "imm:0x%04X", inst->itype.imm);
 	// J type
 	} else if(type == 4) {
-		printf("DEBUG J type ");
-		printf("opcode:0x%02X ", inst->jtype.opcode);
-		printf("addr:0x%07X ", inst->jtype.addr<<2);
+		fprintf(*debug_log_file, "DEBUG J type ");
+		fprintf(*debug_log_file, "opcode:0x%02X ", inst->jtype.opcode);
+		fprintf(*debug_log_file, "addr:0x%07X ", inst->jtype.addr<<2);
 	} else {
-		printf("DEBUG unknown type ");
+		fprintf(*debug_log_file, "DEBUG unknown type ");
 		//this should always work
-		printInstBits(inst);
+		printInstBits(inst, counters, debug_log_file);
 	}
-	printf("\n");
+	fprintf(*debug_log_file, "\n");
 }
 
 /*
@@ -196,19 +206,18 @@ int32_t signFill(int32_t val, int orig_bits) {
 	
 	Return 0 to exit the program (for syscall/invalid instruction) and 1 to keep going
  */
-int SimulateInstruction(union mips_instruction* inst, struct virtual_mem_region* memory, struct context* ctx)
+int SimulateInstruction(union mips_instruction* inst, struct virtual_mem_region* memory, struct context* ctx, 
+	struct logging_counters* counters, FILE** debug_log_file)
 {
 	//print the instruction so we know what hte heck we're supposed to be doing
-	if(debug_mode) {
-		// printInstBits(inst);
-		printInstHex(inst);
-	}
+	// printInstBits(inst, counters, debug_log_file);
+	printInstHex(inst, counters, debug_log_file);
 
 	//do some switching
 	int result;
 	int type = determineInstType(inst);
 	if(type == 1) {
-		result = SimulateSyscall(memory, ctx);
+		result = SimulateSyscall(memory, ctx, counters, debug_log_file);
 	} else if(type == 2) {
 		result = SimulateRtypeInstruction(inst, memory, ctx);
 	// not R type or the only J type, must be I type, could also do or on I types but lazy
@@ -260,23 +269,19 @@ int SimulateRtypeInstruction(union mips_instruction* inst, struct virtual_mem_re
 			break;
 		case 0x18:; //Mult {Hi,Lo} = R[rs] * R[rt]
 			///this seems liike cheating, but lets try it for now
-			int64_t total = ctx->regs[inst->rtype.rt] * ctx->regs[inst->rtype.rs];
-			printf("DEBUG mul total %d\n", (int) total);
-			printf("DEBUG mul low %d\n", (int) total & 0x00000000FFFFFFFF);
-			printf("DEBUG mul high %d\n", (int) ((total & 0xFFFFFFFF00000000)>>32));
-			ctx->lo = (int) total & 0x00000000FFFFFFFF;
-			ctx->hi = (int) ((total & 0xFFFFFFFF00000000)>>32);
+			int64_t total = ((int64_t) ctx->regs[inst->rtype.rt]) * ((int64_t) ctx->regs[inst->rtype.rs]);
+			ctx->lo = (uint32_t) total & 0x00000000FFFFFFFF;
+			ctx->hi = (uint32_t) ((total & 0xFFFFFFFF00000000)>>32);
 			break;
 		case 0x19:; //Multu {Hi,Lo} = R[rs] * R[rt]
-			uint64_t utotal = ctx->regs[inst->rtype.rt] * ctx->regs[inst->rtype.rs];
-			ctx->lo = utotal & 0x00000000FFFFFFFF; // bottom 32 bits
-			ctx->hi = (utotal & 0xFFFFFFFF00000000)>>32; // top 32 bits
+			uint64_t utotal = ((uint64_t) ctx->regs[inst->rtype.rt]) * ((uint64_t) ctx->regs[inst->rtype.rs]);
+			ctx->lo = (uint32_t) utotal & 0x00000000FFFFFFFF; // bottom 32 bits
+			ctx->hi = (uint32_t) ((utotal & 0xFFFFFFFF00000000)>>32); // top 32 bits
 			break; 
 		case 0x1a: // div Lo=R[rs]/R[rt]; Hi=R[rs]%R[rt]
 			// printf("debug calling div\n");
 			if(ctx->regs[inst->rtype.rt] == 0) {
-				if(debug_mode)
-					printf("trying to div by zero just stopping\n");
+				printf("WARNING: tried to div by 0, not gonna do that\n");
 				break;
 			}
 			ctx->lo = ((int32_t) ctx->regs[inst->rtype.rs]) / ((int32_t) ctx->regs[inst->rtype.rt]);
@@ -285,8 +290,7 @@ int SimulateRtypeInstruction(union mips_instruction* inst, struct virtual_mem_re
 		case 0x1b: // divu Lo=R[rs]/R[rt]; Hi=R[rs]%R[rt]
 			// printf("debug calling divu\n");
 			if(ctx->regs[inst->rtype.rt] == 0) {
-				if(debug_mode)
-					printf("trying to div by zero just stopping\n");
+				printf("WARNING: tried to div by 0, not gonna do that\n");
 				break;
 			}
 			ctx->lo = ctx->regs[inst->rtype.rs] / ctx->regs[inst->rtype.rt];
@@ -340,10 +344,10 @@ int SimulateRtypeInstruction(union mips_instruction* inst, struct virtual_mem_re
 			return 1; // early return to avoid ctx->pc += 4
 			break; // for style
 		case 0x0d:
-			printf("Got a breakpoint, just gonna ignore it for now\n");
+			// printf("Got a breakpoint, just gonna ignore it for now\n");
 			break;
 		default:
-			printf("GOT A BAD/UNIMPLIMENTED R TYPE INSTRUCITON\n");
+			printf("Got a bad/unimplimented R type instruciton exiting\n");
 			return 0; //return this to exit program
 	}
 	ctx->pc += 4;
@@ -479,7 +483,7 @@ int SimulateItypeInstruction(union mips_instruction* inst, struct virtual_mem_re
 			}
 			break;
 		default:
-			printf("GOT A BAD/UNIMPLIMENTED I TYPE INSTRUCITON\n");
+			printf("Got a bad/unimplimented I type instruciton exiting\n");
 			return 0; //return this to exit program
 	}
 	ctx->pc += 4;
@@ -504,17 +508,16 @@ int SimulateJtypeInstruction(union mips_instruction* inst, struct virtual_mem_re
 			return 1; //early return to prevent pc+=4
 			break; // style
 		default:
-			printf("GOT A BAD/UNIMPLIMENTED J TYPE INSTRUCITON\n");
+			printf("Got a bad/unimplimented J type instruciton exiting\n");
 			return 0;
 	}
 	ctx->pc += 4;
 	return 1;
 }
 
-int SimulateSyscall(struct virtual_mem_region* memory, struct context* ctx)
+int SimulateSyscall(struct virtual_mem_region* memory, struct context* ctx, struct logging_counters* counters, FILE** debug_log_file)
 {
-	if(debug_mode)
-		printf("Simulating syscall #%d\n", ctx->regs[v0]);
+	fprintf(*debug_log_file, "Simulating syscall #%d\n", ctx->regs[v0]);
 
 	switch(ctx->regs[v0]) {
 		case 1: //print int
@@ -542,9 +545,14 @@ int SimulateSyscall(struct virtual_mem_region* memory, struct context* ctx)
 			break;
 		case 5: //read int
 			// $v0 contains integer read
-			; int result_int;
+			// stop the clock
+			time(&(*counters).out_time);
+			counters->elapsed_time = counters->out_time - counters->in_time;
+			int result_int;
 			scanf("%d", &result_int);
 			ctx->regs[v0] = result_int;
+			// start the clock
+			time(&(*counters).in_time);
 			break;
 		case 8: // read string
 			// $a0 = address of input buffer (in real or fake life>>)
@@ -561,9 +569,14 @@ int SimulateSyscall(struct virtual_mem_region* memory, struct context* ctx)
 			break;
 		case 12: // read char
 			// $v0 contains character read
-			; char result_char;
+			// stop the clock
+			time(&(*counters).out_time);
+			counters->elapsed_time = counters->out_time - counters->in_time;
+			char result_char;
 			scanf("%c", &result_char);
 			ctx->regs[v0] = result_char;
+			// start the clock
+			time(&(*counters).in_time);
 			break;
 		default:
 			printf("GOT A BAD/UNIMPLIMENTED SYSCALL\n");
