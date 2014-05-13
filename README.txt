@@ -1,3 +1,11 @@
+Love note to TA:
+	Most code is tested with the test code included, however to get div working we had to include the -mno-check-zero-division flag when compiling.
+	When the compiler generated the check for 0 branching code it would only continue on to the div functino if the code was trying to div by 0,
+	so that didn't make any sense. We added a check for div by 0 in our code to keep things stable.
+	If you're at all interested in the git history of the project here's the github page https://github.com/mllewellyn/CSCI-2500_final_project
+
+	-Max and Andrew
+
 Directory structure
 	asm_testprog		Assembly-only test program (produces asm_testprog.elf). Modify as needed to test your simulator, but will not be graded.
 	c_testprog			C+assembly test program (produces c_testprog.elf). Modify as needed to test your simulator, but will not be graded
