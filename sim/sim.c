@@ -85,7 +85,8 @@ void RunSimulator(struct virtual_mem_region* memory, struct context* ctx)
 	counters.rtypes = 0;
 	counters.itypes = 0;
 	counters.jtypes = 0;
-	time(&counters.in_time); // set in time
+	counters.elapsed_time = 0;
+	clock_in(&counters);
 
 	union mips_instruction inst;
 	while(1)
@@ -98,7 +99,11 @@ void RunSimulator(struct virtual_mem_region* memory, struct context* ctx)
 			break;
 	}
 
+	// clock out
+	clock_out(&counters);
+
 	// write to log flie
+	print_log(&counters, &log_file);
 
 	// close files
 	fclose(debug_log_file);
@@ -546,13 +551,12 @@ int SimulateSyscall(struct virtual_mem_region* memory, struct context* ctx, stru
 		case 5: //read int
 			// $v0 contains integer read
 			// stop the clock
-			time(&(*counters).out_time);
-			counters->elapsed_time = counters->out_time - counters->in_time;
+			clock_out(counters);
 			int result_int;
 			scanf("%d", &result_int);
 			ctx->regs[v0] = result_int;
 			// start the clock
-			time(&(*counters).in_time);
+			clock_in(counters);
 			break;
 		case 8: // read string
 			// $a0 = address of input buffer (in real or fake life>>)
@@ -570,13 +574,12 @@ int SimulateSyscall(struct virtual_mem_region* memory, struct context* ctx, stru
 		case 12: // read char
 			// $v0 contains character read
 			// stop the clock
-			time(&(*counters).out_time);
-			counters->elapsed_time = counters->out_time - counters->in_time;
+			clock_out(counters);
 			char result_char;
 			scanf("%c", &result_char);
 			ctx->regs[v0] = result_char;
 			// start the clock
-			time(&(*counters).in_time);
+			clock_in(counters);
 			break;
 		default:
 			printf("GOT A BAD/UNIMPLIMENTED SYSCALL\n");
@@ -584,4 +587,27 @@ int SimulateSyscall(struct virtual_mem_region* memory, struct context* ctx, stru
 	}
 	ctx->pc += 4;
 	return 1;
+}
+
+void print_log(struct logging_counters* counters, FILE** log_file) {
+	fprintf(*log_file, "MIPS simulator log\n");
+	fprintf(*log_file, "Time elapsed:\n    note: max accucary seems to be 0.01s\n");
+	fprintf(*log_file, "    'clocks' elapsed: %lu\n", counters->elapsed_time);
+	fprintf(*log_file, "    seconds elapsed: %f\n", ((float) counters->elapsed_time) / CLOCKS_PER_SEC);
+	fprintf(*log_file, "\nInstructions simulated:\n    R type: %d\n    I type: %d\n    J type: %d\n", 
+		counters->rtypes, counters->itypes, counters->jtypes);
+}
+
+void clock_in(struct logging_counters* counters) {
+	// clock_gettime(CLOCK_REALTIME, &(counters->in_time);
+	counters->in_time = clock();
+	// printf("Clocking in at %lu\n", counters->in_time);
+}
+
+void clock_out(struct logging_counters* counters) {
+	// clock_gettime(CLOCK_REALTIME, &(counters->out_time);
+	// counters->elapsed_time += counters->out_time.tv_nsec - counters->in_time.tv_nsec;
+	counters->out_time = clock();
+	// printf("Clocking out at %lu\n", counters->out_time);
+	counters->elapsed_time += counters->out_time - counters->in_time;
 }

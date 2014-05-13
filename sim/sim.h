@@ -145,9 +145,11 @@ struct logging_counters
 	uint32_t itypes;
 	uint32_t jtypes;
 	// time vars
-	time_t in_time; // most recent clock in
-	time_t out_time; // most recent clock out
-	time_t elapsed_time;
+	clock_t in_time; // most recent clock in
+	clock_t out_time; // most recent clock out
+	// struct timespec in_time; // most recent clock in
+	// struct timespec out_time; // most recent clock out1
+	uint64_t elapsed_time;
 };
 
 void RunSimulator(struct virtual_mem_region* memory, struct context* ctx);
@@ -170,5 +172,7 @@ int32_t signFill(int32_t val, int orig_bits);
 
 //logging functions
 void print_log(struct logging_counters* counters, FILE** log_file);
+void clock_in(struct logging_counters* counters);
+void clock_out(struct logging_counters* counters);
 
 #endif
