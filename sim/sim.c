@@ -408,6 +408,14 @@ int SimulateItypeInstruction(union mips_instruction* inst, struct virtual_mem_re
 			word = word | (ctx->regs[inst->itype.rt] & 0x7F); // or with 7 smallest bytes of rt
 			StoreWordToVirtualMemory(ctx->regs[inst->itype.rs] + inst->itype.imm, word, memory);
 			break;
+		case 0x20: // lb: load byte R[rt] (7:0)=M[R[rs]+SignExtImm](7:0)
+			;
+			int32_t lb_temp=FetchWordFromVirtualMemory(ctx->regs[inst->itype.rs] + inst->itype.imm, memory);
+			lb_temp=lb_temp & !0x7F; //wipe out 7 smallest bytes
+			lb_temp=lb_temp | (ctx->regs[inst->itype.rs]);
+			ctx->regs[inst->itype.rt]=lb_temp;
+			break;
+	
 		case 0x05: // bne if(R[rs]!=R[rt]) PC=PC+4+BranchAddr
 			if(ctx->regs[inst->itype.rs] != ctx->regs[inst->itype.rt]) {
 				ctx->pc = ctx->pc + 4 + (imm_filled<<2);
@@ -420,7 +428,7 @@ int SimulateItypeInstruction(union mips_instruction* inst, struct virtual_mem_re
 				return 1; // return early to prevent auto +4
 			}
 			break;
-		case 0x01:  //bgez and bltz
+		case 0x01:  //BLTZAL, BGEZAL, BGEZX and BLTZ
 			if(inst->itype.rt==0x1) {
 				if((int32_t) ctx->regs[inst->itype.rs] >= 0) { //bgez
 					ctx->pc = ctx->pc + 4 + (imm_filled<<2);
@@ -431,7 +439,23 @@ int SimulateItypeInstruction(union mips_instruction* inst, struct virtual_mem_re
 					ctx->pc = ctx->pc + 4 + (imm_filled<<2);
 					return 1; // return early to prevent auto +4
 				}
-			} else {
+			   
+			} else if(inst->itype.rt==0x11) { //BGEZAL
+				if((int32_t) ctx->regs[inst->itype.rs]>=0){
+					ctx->regs[ra]=ctx->pc+4;
+					ctx->pc = ctx->pc + 4 + ((ctx->pc & 0xF0000000) | (inst->itype.imm<<2));
+					return 1; //return early to prevent auto +4
+				}
+
+			} else if(inst->itype.rt==0x10) { //BLTZAL
+				if((int32_t)ctx->regs[inst->itype.rs]<=0){
+					ctx->regs[ra]=ctx->pc+4;
+					ctx->pc = ctx->pc + 4 + ((ctx->pc & 0xF0000000) | (inst->itype.imm<<2));
+					return 1; //return early to prevent auto +4
+
+				}
+			}
+			else {
 				printf("Got bad I type instruction with opcode 0x01\n");
 				return 0;
 			}
