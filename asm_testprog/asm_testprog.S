@@ -10,6 +10,15 @@
 .globl __start
 # uncomment for qtspim, also put in freaking 
 # .globl main
+	__start:
+	# main:
+	# //Simulator loads sp with a valid address before starting program
+	
+	# jal test_rtype
+	# jal test_itype
+	# jal itype_alu
+
+	j quit
 
 	print_newline: 
 		# prints a new line and then puts print int back in v0 to make life easy
@@ -30,35 +39,6 @@
 		syscall
 
 		j ra
-			.data
-string1: 	.asciiz "Print this. \n"
-	# main:		
-					.text
-	__start:		li v0, 4
-					la a0, string1
-					li t1, 5
-					sh a2, 0(t1)
-					syscall
-	# //Simulator loads sp with a valid address before starting program
-
-
-	#jal test_rtype
-	#sub s0, ra, 500
-	#bltzal s0, test_itype
-	#  jal test_itype
-	#jal itype_alu
-
-		#jr ra
-
-	# main:
-	# //Simulator loads sp with a valid address before starting program
-	
-	#jal test_rtype
-	# jal test_itype
-	# jal itype_alu
-
-	j quit
-
 
 	test_itype:
 	# start by storing ra
