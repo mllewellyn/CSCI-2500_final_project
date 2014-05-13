@@ -289,7 +289,6 @@ int SimulateRtypeInstruction(union mips_instruction* inst, struct virtual_mem_re
 			ctx->hi = (uint32_t) ((utotal & 0xFFFFFFFF00000000)>>32); // top 32 bits
 			break; 
 		case 0x1a: // div Lo=R[rs]/R[rt]; Hi=R[rs]%R[rt]
-			// printf("debug calling div\n");
 			if(ctx->regs[inst->rtype.rt] == 0) {
 				printf("WARNING: tried to div by 0, not gonna do that\n");
 				break;
@@ -298,7 +297,6 @@ int SimulateRtypeInstruction(union mips_instruction* inst, struct virtual_mem_re
 			ctx->hi = ((int32_t) ctx->regs[inst->rtype.rs]) % ((int32_t) ctx->regs[inst->rtype.rt]);
 			break;
 		case 0x1b: // divu Lo=R[rs]/R[rt]; Hi=R[rs]%R[rt]
-			// printf("debug calling divu\n");
 			if(ctx->regs[inst->rtype.rt] == 0) {
 				printf("WARNING: tried to div by 0, not gonna do that\n");
 				break;
@@ -374,8 +372,6 @@ int SimulateItypeInstruction(union mips_instruction* inst, struct virtual_mem_re
 	switch(inst->itype.opcode) {
 		case OP_ADDIU:	//R[rt] = R[rs] + SignExtImm
 			//note this actually adds a signed number BUT doesn't throw anything when there's overflow
-			// printf("DEBUG ORIG: 0x%x\n" ,ctx->regs[inst->itype.rt]);
-			// printf("DEBUG FINAL 0x%x\n", ctx->regs[inst->itype.rs] + imm);
 			ctx->regs[inst->itype.rt] = ctx->regs[inst->itype.rs] + imm_filled;
 			break;
 		case 0x08:	// addi Signed R[rt] = R[rs] + SignExtImm
@@ -533,7 +529,6 @@ int SimulateSyscall(struct virtual_mem_region* memory, struct context* ctx, stru
 	switch(ctx->regs[v0]) {
 		case 1: //print int
 			printf("%d",ctx->regs[a0]);
-			// printf("\n"); //this is just for debugging
 			break;
 		case 4: //print null terminated string
 			; //nop for switch
@@ -575,7 +570,6 @@ int SimulateSyscall(struct virtual_mem_region* memory, struct context* ctx, stru
 			break;
 		case 11: // print char
 			printf("%c", ctx->regs[a0]);
-			// printf("\n"); //this is just for debugging
 			break;
 		case 12: // read char
 			// $v0 contains character read

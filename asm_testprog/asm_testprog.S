@@ -348,7 +348,7 @@
 	jal print_newline
 
 	addi t1, zero, -1234
-		# print the numbers that are gonna be mul and div
+	# print the numbers that are gonna be mul and div
 	or a0, t0, zero
 	syscall
 	addi v0, zero, 11
