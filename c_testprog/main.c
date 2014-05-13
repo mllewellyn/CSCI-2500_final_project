@@ -46,7 +46,7 @@ void div_loop_test() {
 	}
 }
 
-void crap_that_used_to_be_in_main() {
+void stuff_that_used_to_be_in_main() {
 	const char* str = "hello world\n";
 	do_syscall((unsigned int)str, 0, SYS_PRINT_STR);	// print string syscall
 	unsigned int a = 1234;
@@ -88,7 +88,7 @@ void input_tests() {
 
 int main()
 {
-	// crap_that_used_to_be_in_main();
+	// stuff_that_used_to_be_in_main();
 	div_loop_test();
 	input_tests();
 	

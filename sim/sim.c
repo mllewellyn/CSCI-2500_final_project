@@ -405,14 +405,9 @@ int SimulateItypeInstruction(union mips_instruction* inst, struct virtual_mem_re
 			ctx->regs[inst->itype.rt] = inst->itype.imm<<16;
 			break;
 		case OP_LW: // R[rt] = M[R[rs]+SignExtImm]
-			// (note to self) WORKING DON't FUCK WITH
-			// printf("DEBUG MEM TARGET:0x%X\n", ctx->regs[inst->itype.rs] + inst->itype.imm);
 			ctx->regs[inst->itype.rt] = FetchWordFromVirtualMemory(ctx->regs[inst->itype.rs] + inst->itype.imm, memory);
 			break;
 		case OP_SW: // M[R[rs]+SignExtImm] = R[rt]
-			// (note to self) WORKING DON't FUCK WITH
-			// printf("DEBUG REG_S VAL:0x%x\n", ctx->regs[inst->itype.rs]);
-			// printf("DEBUG MEM TARGET:0x%x\n", ctx->regs[inst->itype.rs] + inst->itype.imm);
 			StoreWordToVirtualMemory(ctx->regs[inst->itype.rs] + inst->itype.imm, ctx->regs[inst->itype.rt], memory);
 			break;
 		case 0x20: // lb: load byte R[rt] (7:0)=M[R[rs]+SignExtImm](7:0)
