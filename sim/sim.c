@@ -415,6 +415,13 @@ int SimulateItypeInstruction(union mips_instruction* inst, struct virtual_mem_re
 			// printf("DEBUG MEM TARGET:0x%x\n", ctx->regs[inst->itype.rs] + inst->itype.imm);
 			StoreWordToVirtualMemory(ctx->regs[inst->itype.rs] + inst->itype.imm, ctx->regs[inst->itype.rt], memory);
 			break;
+		case 0x20: // lb: load byte R[rt] (7:0)=M[R[rs]+SignExtImm](7:0)
+			;
+			int32_t lb_temp = FetchWordFromVirtualMemory(ctx->regs[inst->itype.rs] + inst->itype.imm, memory);
+			lb_temp=lb_temp & !0x7F; //wipe out 7 smallest bytes
+			lb_temp=lb_temp | (ctx->regs[inst->itype.rs]);
+			ctx->regs[inst->itype.rt]=lb_temp;
+			break;
 		case 0x28: // sb: store byte M[R[rs]+SignExtImm](7:0) = R[rt](7:0)
 			; // nop for switch
 			int32_t sb_word = FetchWordFromVirtualMemory(ctx->regs[inst->itype.rs] + inst->itype.imm, memory);
@@ -424,16 +431,9 @@ int SimulateItypeInstruction(union mips_instruction* inst, struct virtual_mem_re
 			break;
 		case 0x29: //sh store halfword
 			; int32_t sh_word = FetchWordFromVirtualMemory(ctx->regs[inst->itype.rs] + inst->itype.imm, memory);
-			sh_word = sh_word & !0xFFFF; // wipe out the 16 least significant bits
+			sh_word = sh_word & !0xFFFF0000; // wipe out the 16 most significant bits
 			sh_word = sh_word | (ctx->regs[inst->itype.rt] & 0xFFFF); // or with 16 least significant bits
 			StoreWordToVirtualMemory(ctx->regs[inst->itype.rs] + inst->itype.imm, sh_word, memory);
-			break;
-		case 0x20: // lb: load byte R[rt] (7:0)=M[R[rs]+SignExtImm](7:0)
-			;
-			int32_t lb_temp = FetchWordFromVirtualMemory(ctx->regs[inst->itype.rs] + inst->itype.imm, memory);
-			lb_temp=lb_temp & !0x7F; //wipe out 7 smallest bytes
-			lb_temp=lb_temp | (ctx->regs[inst->itype.rs]);
-			ctx->regs[inst->itype.rt]=lb_temp;
 			break;
 		case 0x05: // bne if(R[rs]!=R[rt]) PC=PC+4+BranchAddr
 			if(ctx->regs[inst->itype.rs] != ctx->regs[inst->itype.rt]) {

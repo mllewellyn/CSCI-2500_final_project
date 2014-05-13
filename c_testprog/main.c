@@ -70,11 +70,15 @@ void crap_that_used_to_be_in_main() {
 void input_tests() {
 	// not gonna read a string because that requires allocing memmory which is NOT gonna happen
 	// read and print char
+	const char* str1 = "input a char\n";
+	do_syscall((unsigned int)str1, 0, SYS_PRINT_STR);
 	char c;
 	c = do_syscall(0, 0, 12); // do_syscall returns v0
 	// and print it
 	do_syscall((unsigned int) c, 0, 11);
 	// read and print char
+	const char* str2 = "input an int\n";
+	do_syscall((unsigned int)str2, 0, SYS_PRINT_STR);
 	int a;
 	a = do_syscall(0, 0, 5); // do_syscall returns v0
 	// and print it
@@ -85,7 +89,7 @@ void input_tests() {
 int main()
 {
 	// crap_that_used_to_be_in_main();
-	// div_loop_test();
+	div_loop_test();
 	input_tests();
 	
 	return 0;
