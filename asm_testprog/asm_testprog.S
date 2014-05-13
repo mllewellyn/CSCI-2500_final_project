@@ -28,7 +28,7 @@
 		syscall
 		addi a0, zero, 10 # ascii for new line
 		syscall
-<<<<<<< HEAD
+
 		j ra
 			.data
 string1: 	.asciiz "Print this. \n"
@@ -45,17 +45,16 @@ string1: 	.asciiz "Print this. \n"
 	bltzal s0, test_itype
 	#  jal test_itype
 	#jal itype_alu
-=======
-		jr ra
+
+		#jr ra
 
 	# main:
-	__start:
 	# //Simulator loads sp with a valid address before starting program
 	
 	jal test_rtype
 	# jal test_itype
 	# jal itype_alu
->>>>>>> 4144428a4e46fe61ddd94390c3a76ecac04d594d
+
 	j quit
 
 
@@ -284,14 +283,13 @@ string1: 	.asciiz "Print this. \n"
 	
 	addi s0, ra, 0
 	# load numbers into t0 and t1 and v0 to start
-<<<<<<< HEAD
-	
+
 	addi t0, zero, 254
 	addi t1, zero, 123
-=======
+
 	# addi t0, zero, 254
 	# addi t1, zero, 123
->>>>>>> 4144428a4e46fe61ddd94390c3a76ecac04d594d
+
 	addi v0, zero, 1
 	# do some math and print some numbers
 	# add a0, t0, t1
@@ -395,15 +393,14 @@ string1: 	.asciiz "Print this. \n"
 	jal print_newline
 
 	addi ra, s0, 0
-<<<<<<< HEAD
+
 	j ra
 test: 
 	addi a0, zero, 'A'
 	syscall
-=======
 	jr ra
 
->>>>>>> 4144428a4e46fe61ddd94390c3a76ecac04d594d
+
 branch_failure:
 	# print an F because branching failed
 	addi v0, zero, 11
