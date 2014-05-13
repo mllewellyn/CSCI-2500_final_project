@@ -20,22 +20,23 @@
 		nop  # not entirely sure why this has to be here, bug in the code?? without it the above instruction doesn't work
 		jr ra
 
+
 	print_success: 
 		addi t5, t5, 1 # add 1 to t5, it's the success coutner
 		addi v0, zero, 11
-		addi a0, zero, 'S'
+		addi a0, zero, 't'
 		syscall
 		addi a0, zero, 10 # ascii for new line
 		syscall
 		jr ra
 
-
 	# main:
 	__start:
 	# //Simulator loads sp with a valid address before starting program
-
+	
 	jal test_rtype
 	# jal test_itype
+	# jal itype_alu
 	j quit
 
 
@@ -239,7 +240,7 @@
 	test_rtype:
 	# test R type alu instrucitons
 	# R ALU: ADD, ADDU, AND, OR, SUB, SUBU, XOR, SLT, SLTU, SLL, SLLV,
-	# 	SRA, SRL, SRLV, DIV, DIVU, MULT, MULTU
+	# 	SRA, SRL, SRLV, DIV, DIVtest_rtypeU, MULT, MULTU
 	# start by storing ra, yes this is lazy it's oaky
 	addi s0, ra, 0
 	# load numbers into t0 and t1 and v0 to start

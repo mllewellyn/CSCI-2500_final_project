@@ -2,3 +2,4 @@
 *.sublime-workspace
 *.elf
 sim.out
+c_testprog/main.o
