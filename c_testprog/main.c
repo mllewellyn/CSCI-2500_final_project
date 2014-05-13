@@ -16,10 +16,8 @@ enum syscalls
 
 int main()
 {
-
-
-	const char* str1 = "\n i =";
-	const char* str2 = "\n i/3 =";
+	const char* str1 = "\n i = ";
+	const char* str2 = "\n i/3 = ";
 	const char* str3 = "\n i%3 =";
 	
 	int i;

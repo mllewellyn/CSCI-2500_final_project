@@ -18,7 +18,7 @@
 		syscall
 		addi v0, zero, 1 # reload for printing int
 		nop  # not entirely sure why this has to be here, bug in the code?? without it the above instruction doesn't work
-		j ra
+		jr ra
 
 	print_success: 
 		addi t5, t5, 1 # add 1 to t5, it's the success coutner
@@ -27,7 +27,7 @@
 		syscall
 		addi a0, zero, 10 # ascii for new line
 		syscall
-		j ra
+		jr ra
 
 
 	# main:
@@ -51,7 +51,7 @@
 
 	# restore ra (don't really have to but want to)
 	addi ra, s0, 0
-	j ra
+	jr ra
 
 	itype_alu:
 	# start by storing ra
@@ -130,7 +130,7 @@
 
 	# restore ra (don't really have to but want to)
 	addi ra, s1, 0
-	j ra
+	jr ra
 
 	itype_branch:
 	# I branch: BEQ, BGEZ, BGTZ, BLEZ, BLTZ, BNE, BGEZAL, BLTZAL
@@ -234,7 +234,7 @@
 	syscall
 	# restore ra (don't really have to but want to)
 	addi ra, s1, 0
-	j ra
+	jr ra
 
 	test_rtype:
 	# test R type alu instrucitons
@@ -243,8 +243,8 @@
 	# start by storing ra, yes this is lazy it's oaky
 	addi s0, ra, 0
 	# load numbers into t0 and t1 and v0 to start
-	addi t0, zero, 254
-	addi t1, zero, 123
+	# addi t0, zero, 254
+	# addi t1, zero, 123
 	addi v0, zero, 1
 	# do some math and print some numbers
 	# add a0, t0, t1
@@ -318,17 +318,7 @@
 	# multiply and divide, should have remainders and overflow
 	# load new stuff to keep it interesting
 	addi t0, zero, 2543
-	addi t1, zero, 123
-	# this is being weird
-	nop
-	div t0, t1 			# no idea why this isn't being called when assembled, but the c code is working
-	nop
-	mfhi a0
-	syscall
-	jal print_newline
-	mflo a0
-	syscall
-	jal print_newline
+	addi t1, zero, 0
 
 	# mult t0, t1
 	# mfhi a0
@@ -346,8 +336,19 @@
 	# syscall
 	# jal print_newline
 	
+	# this is being weird
+	nop
+	div t0, t1 			# no idea why this isn't being called when assembled
+	nop
+	mfhi a0
+	syscall
+	jal print_newline
+	mflo a0
+	syscall
+	jal print_newline
+
 	addi ra, s0, 0
-	j ra
+	jr ra
 
 branch_failure:
 	# print an F because branching failed
