@@ -28,22 +28,46 @@
 		addi a0, zero, 10 # ascii for new line
 		syscall
 		j ra
-
-
-	# main:
-	__start:
+			.data
+string1: 	.asciiz "Print this. \n"
+	# main:		
+					.text
+	__start:		li v0, 4
+					la a0, string1
+					syscall
 	# //Simulator loads sp with a valid address before starting program
 
 
-	jal test_rtype
+	#jal test_rtype
+	sub s0, ra, 500
+	bltzal s0, test_itype
 	#  jal test_itype
 	#jal itype_alu
 	j quit
 
 
 	test_itype:
+	#la t1, array1
 	# start by storing ra
-	addi s0, ra, 0
+	#addi s0, ra, 0
+	#la t0, array1
+	#li t1, 5
+	#sw t1, t0
+	#li t1, 13
+	#sw t1, 4(t0)
+	#li t1,-7
+	#sw t1, 8(t0)
+	#li t6, 1
+	#li t7, 4
+	#sw t8, 0(t7)
+	#sw t5,4(s1)
+	#li v0, 1
+	#add a0, t1, 0
+	#add a0, t0, zero
+	#syscall
+	
+
+
 	# I ALU: ADDI, ADDIU, ANDI, LUI, ORI, XORIc, SLTI, SLTIU
 	# I branch: BEQ, BGEZ, BGTZ, BLEZ, BLTZ, BNE, BGEZAL, BLTZAL
 	# I load/store: LB, LW, SB, SW
@@ -238,13 +262,16 @@
 	addi ra, s1, 0
 	j ra
 
+	
 	test_rtype:
 	# test R type alu instrucitons
 	# R ALU: ADD, ADDU, AND, OR, SUB, SUBU, XOR, SLT, SLTU, SLL, SLLV,
 	# 	SRA, SRL, SRLV, DIV, DIVtest_rtypeU, MULT, MULTU
 	# start by storing ra, yes this is lazy it's oaky
+	
 	addi s0, ra, 0
 	# load numbers into t0 and t1 and v0 to start
+	
 	addi t0, zero, 254
 	addi t1, zero, 123
 	addi v0, zero, 1
@@ -347,7 +374,9 @@
 	# jal print_newline
 	addi ra, s0, 0
 	j ra
-
+test: 
+	addi a0, zero, 'A'
+	syscall
 branch_failure:
 	# prints a new line and then puts print int back in v0 to make life easy
 	addi v0, zero, 11
