@@ -6,7 +6,7 @@
 #include "sim.h"
 // Other includes and debug constant
 #include <stdbool.h>
-const bool debug_mode = true;
+const bool debug_mode = false;
 
 /**
 	@brief Read logic for instruction fetch and load instructions

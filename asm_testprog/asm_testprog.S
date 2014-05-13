@@ -10,13 +10,15 @@
 .globl __start
 # uncomment for qtspim, also put in freaking 
 # .globl main
+list: .word 3, 0, 1, 2, 6, -2, 4, 7, 3, 7
 	__start:
+	
 	# main:
 	# //Simulator loads sp with a valid address before starting program
 	
-	# jal test_rtype
-	# jal test_itype
-	# jal itype_alu
+	 jal test_rtype
+	 jal test_itype
+	 jal itype_alu
 
 	j quit
 
@@ -44,14 +46,31 @@
 	# start by storing ra
 	addi s0, ra, 0
 
-	#la t1, array1
+	#la t1, array.data 0x20001
 	#la t0, array1
 	#li t1, 5
-	#sw t1, t0
+
+	la t3, list
+	li t2, 6
+	add t2, t2, t2
+	add t1, t2, t3
+	lw t4, 0(t1)
+	lb t3, 0(t1)
+	lw t4, 0(t1)
+	sw t2, 0(t3)
+	sb t2, 0(t3)
+	addi v0, zero, 1
+	li v0, 1
+	syscall
+	#li t2, 5
+	#add t3, t2, t2
+	#sw s1, 0(t3)
+	#syscall
 	#li t1, 13
-	#sw t1, 4(t0)
+	#sw t1, 4(t3)
 	#li t1,-7
 	#sw t1, 8(t0)
+	#lw t0, 0(t0)
 	#li t6, 1
 	#li t7, 4
 	#sw t8, 0(t7)
@@ -90,8 +109,15 @@
 	jal print_newline
 
 	addiu a0, t0, 12345
-	sh a0, 0(t0)
+	#sh a0, 0(t0)
+	li t6, 1
+	li t7, 200
+	add a0, t6, t7
 	syscall
+	li t6, -24
+	mult t6, t7
+	mfhi a0
+	syscall 
 	jal print_newline
 
 	addiu a0, t0, -12345 # not sure what this should do think the same thing
@@ -105,6 +131,10 @@
 	lui a0, 12345
 	syscall
 	jal print_newline
+
+	srl s0, s1, 24
+	#sw s0, 0(t6)
+	#lw t6, s1
 
 	ori a0, t0, 12345
 	syscall
@@ -125,6 +155,7 @@
 	slti a0, t0, -12345
 	syscall
 	jal print_newline
+
 
 	slti a0, t0, 32000
 	syscall
@@ -259,7 +290,7 @@
 	jr ra
 
 	
-	test_rtype:
+test_rtype:
 	# test R type alu instrucitons
 	# R ALU: ADD, ADDU, AND, OR, SUB, SUBU, XOR, SLT, SLTU, SLL, SLLV,
 	# 	SRA, SRL, SRLV, DIV, DIVtest_rtypeU, MULT, MULTU
