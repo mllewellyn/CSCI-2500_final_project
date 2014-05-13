@@ -16,18 +16,27 @@ enum syscalls
 
 int main()
 {
-	const char* str1 = "\n i = ";
-	const char* str2 = "\n i/3 = ";
-	const char* str3 = "\n i%3 =";
+	const char* str1 = "\n    i= ";
+	const char* str2 = "\n  i/3= ";
+	const char* str3 = "\n  i%3= ";
+	const char* str4 = "\n i/-3= ";
+	const char* str5 = "\n i%-3= ";
 	
 	int i;
 	for(i=0; i<5; ++i) {
-		do_syscall((unsigned int)str1, 0, SYS_PRINT_STR);	// print string syscall
-		do_syscall((unsigned int)i, 0, 1); 	//print int syscall
-		do_syscall((unsigned int)str2, 0, SYS_PRINT_STR);	// print string syscall
-		do_syscall((unsigned int)i/3, 0, 1); 	//print int syscall
-		do_syscall((unsigned int)str3, 0, SYS_PRINT_STR);	// print string syscall
-		do_syscall((unsigned int)i%3, 0, 1); 	//print int syscall
+		//do some basic div
+		do_syscall((unsigned int) str1, 0, SYS_PRINT_STR);	// print string syscall
+		do_syscall((unsigned int) i, 0, 1); 	//print int syscall
+		do_syscall((unsigned int) str2, 0, SYS_PRINT_STR);	// print string syscall
+		do_syscall((unsigned int) i/3, 0, 1); 	//print int syscall
+		do_syscall((unsigned int) str3, 0, SYS_PRINT_STR);	// print string syscall
+		do_syscall((unsigned int) i%3, 0, 1); 	//print int syscall
+		//do some signed div
+		do_syscall((unsigned int) str4, 0, SYS_PRINT_STR);	// print string syscall
+		do_syscall((unsigned int) (i/-3), 0, 1); 	//print int syscall
+		do_syscall((unsigned int) str5, 0, SYS_PRINT_STR);	// print string syscall
+		do_syscall((unsigned int) (i%-3), 0, 1); 	//print int syscall
+		do_syscall(10, 0, 11); //print a new line
 	}
 	
 	// char c = 'h';
