@@ -144,6 +144,7 @@ struct logging_counters
 	uint32_t rtypes;
 	uint32_t itypes;
 	uint32_t jtypes;
+	uint32_t syscalls;
 	// time vars
 	clock_t in_time; // most recent clock in
 	clock_t out_time; // most recent clock out

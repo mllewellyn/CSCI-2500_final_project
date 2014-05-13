@@ -589,13 +589,15 @@ int SimulateSyscall(struct virtual_mem_region* memory, struct context* ctx, stru
 	return 1;
 }
 
-void print_log(struct logging_counters* counters, FILE** log_file) {
-	fprintf(*log_file, "MIPS simulator log\n");
+void print_log(struct logging_counters* counters, FILE** log_file) {git 
 	fprintf(*log_file, "Time elapsed:\n    note: max accucary seems to be 0.01s\n");
 	fprintf(*log_file, "    'clocks' elapsed: %lu\n", counters->elapsed_time);
 	fprintf(*log_file, "    seconds elapsed: %f\n", ((float) counters->elapsed_time) / CLOCKS_PER_SEC);
-	fprintf(*log_file, "\nInstructions simulated:\n    R type: %d\n    I type: %d\n    J type: %d\n", 
-		counters->rtypes, counters->itypes, counters->jtypes);
+	fprintf(*log_file, "\nInstructions simulated:\n");
+	fprintf(*log_file, "    R type:   %d\n", counters->rtypes);
+	fprintf(*log_file, "    I type:   %d\n", counters->itypes);
+	fprintf(*log_file, "    J type:   %d\n", counters->jtypes);
+	fprintf(*log_file, "    Syscalls: %d\n", counters->syscalls);
 }
 
 void clock_in(struct logging_counters* counters) {
