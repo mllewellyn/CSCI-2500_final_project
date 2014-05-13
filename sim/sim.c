@@ -273,6 +273,22 @@ int SimulateRtypeInstruction(union mips_instruction* inst, struct virtual_mem_re
 			ctx->hi = (utotal & 0xFFFFFFFF00000000)>>32; // top 32 bits
 			break; 
 		case 0x1a: // div Lo=R[rs]/R[rt]; Hi=R[rs]%R[rt]
+			// printf("debug calling div\n");
+			if(ctx->regs[inst->rtype.rt] == 0) {
+				if(debug_mode)
+					printf("trying to div by zero just stopping\n");
+				break;
+			}
+			ctx->lo = ((int32_t) ctx->regs[inst->rtype.rs]) / ((int32_t) ctx->regs[inst->rtype.rt]);
+			ctx->hi = ((int32_t) ctx->regs[inst->rtype.rs]) % ((int32_t) ctx->regs[inst->rtype.rt]);
+			break;
+		case 0x1b: // divu Lo=R[rs]/R[rt]; Hi=R[rs]%R[rt]
+			// printf("debug calling divu\n");
+			if(ctx->regs[inst->rtype.rt] == 0) {
+				if(debug_mode)
+					printf("trying to div by zero just stopping\n");
+				break;
+			}
 			ctx->lo = ctx->regs[inst->rtype.rs] / ctx->regs[inst->rtype.rt];
 			ctx->hi = ctx->regs[inst->rtype.rs] % ctx->regs[inst->rtype.rt];
 			break;
@@ -286,9 +302,8 @@ int SimulateRtypeInstruction(union mips_instruction* inst, struct virtual_mem_re
 				ctx->regs[inst->rtype.rd] = 0;
 			}
 			break;
-		case 0x2B: //SLTU R[rd]=R[rs] SLTU R[rt]. Unsigned component not implmenented, not sure how to cast labels as unsigned.
-			;
-			if ((uint32_t)(ctx->regs[inst->rtype.rs]) < (uint32_t)(ctx->regs[inst->rtype.rt])) {
+		case 0x2B: //SLTU R[rd]=R[rs] SLTU R[rt]. registers are unsigned by default
+			if (ctx->regs[inst->rtype.rs] < ctx->regs[inst->rtype.rt]) {
 				ctx->regs[inst->rtype.rd] = 1;
 			} else {
 				ctx->regs[inst->rtype.rd] = 0;
@@ -324,6 +339,9 @@ int SimulateRtypeInstruction(union mips_instruction* inst, struct virtual_mem_re
 			ctx->pc = ctx->regs[inst->rtype.rs];
 			return 1; // early return to avoid ctx->pc += 4
 			break; // for style
+		case 0x0d:
+			printf("Got a breakpoint, just gonna ignore it for now\n");
+			break;
 		default:
 			printf("GOT A BAD/UNIMPLIMENTED R TYPE INSTRUCITON\n");
 			return 0; //return this to exit program
@@ -354,13 +372,13 @@ int SimulateItypeInstruction(union mips_instruction* inst, struct virtual_mem_re
 				printf("WARNING: addi overflow\n");
 			break;
 		case 0x0C: //Andi R[rt]=R[rs] & Imm
-			ctx->regs[inst->itype.rt] = ctx->regs[inst->itype.rs] & imm_filled;
+			ctx->regs[inst->itype.rt] = ctx->regs[inst->itype.rs] & inst->itype.imm;
 			break;
 		case 0x0D: //Ori R[rt]=R[rs] | Imm
-			ctx->regs[inst->itype.rt] = ctx->regs[inst->itype.rs] | imm_filled;
+			ctx->regs[inst->itype.rt] = ctx->regs[inst->itype.rs] | inst->itype.imm;
 			break;
 		case 0x0E: //XORI R[rt]=R[rs] ^ Imm
-			ctx->regs[inst->itype.rt] = ctx->regs[inst->itype.rs] ^ imm_filled;
+			ctx->regs[inst->itype.rt] = ctx->regs[inst->itype.rs] ^ inst->itype.imm;
 			break; 
 		case 0x0A: //SLTI R[rt]=R[rs] SLTI Imm
 			ctx->regs[inst->itype.rt] = (int32_t) ctx->regs[inst->itype.rs] < (int32_t) imm_filled;
@@ -392,25 +410,25 @@ int SimulateItypeInstruction(union mips_instruction* inst, struct virtual_mem_re
 			break;
 		case 0x05: // bne if(R[rs]!=R[rt]) PC=PC+4+BranchAddr
 			if(ctx->regs[inst->itype.rs] != ctx->regs[inst->itype.rt]) {
-				ctx->pc = ctx->pc + 4 + ((ctx->pc & 0xF0000000) | (inst->itype.imm<<2));
+				ctx->pc = ctx->pc + 4 + (imm_filled<<2);
 				return 1; // return early to prevent auto +4
 			}
 			break;
 		case 0x04: // beq if(R[rs]==R[rt]) PC=PC+4+BranchAddr
 			if(ctx->regs[inst->itype.rs] == ctx->regs[inst->itype.rt]) {
-				ctx->pc = ctx->pc + 4 + ((ctx->pc & 0xF0000000) | (inst->itype.imm<<2));
+				ctx->pc = ctx->pc + 4 + (imm_filled<<2);
 				return 1; // return early to prevent auto +4
 			}
 			break;
 		case 0x01:  //bgez and bltz
 			if(inst->itype.rt==0x1) {
 				if((int32_t) ctx->regs[inst->itype.rs] >= 0) { //bgez
-					ctx->pc = ctx->pc + 4 + ((ctx->pc & 0xF0000000) | (inst->itype.imm<<2));
+					ctx->pc = ctx->pc + 4 + (imm_filled<<2);
 					return 1; // return early to prevent auto +4
 				}
 			} else if(inst->itype.rt==0x0) {
 				if ((int32_t) ctx->regs[inst->itype.rs] < 0) { //bltz
-					ctx->pc = ctx->pc + 4 + ((ctx->pc & 0xF0000000) | (inst->itype.imm<<2));
+					ctx->pc = ctx->pc + 4 + (imm_filled<<2);
 					return 1; // return early to prevent auto +4
 				}
 			} else {
@@ -421,7 +439,7 @@ int SimulateItypeInstruction(union mips_instruction* inst, struct virtual_mem_re
 		case 0x06: //blez
 			if(ctx->regs[inst->itype.rt]==0x0) {
 				if((int32_t) ctx->regs[inst->itype.rs] <= 0) {
-					ctx->pc = ctx->pc + 4 + ((ctx->pc & 0xF0000000) | (inst->itype.imm<<2));
+					ctx->pc = ctx->pc + 4 + (imm_filled<<2);
 					return 1; // return early to prevent auto +4
 				}
 			} else {
@@ -432,7 +450,7 @@ int SimulateItypeInstruction(union mips_instruction* inst, struct virtual_mem_re
 		case 0x07: //bgtz
 			if(ctx->regs[inst->itype.rt]==0x0) {
 				if((int32_t) ctx->regs[inst->itype.rs] > 0) {
-					ctx->pc = ctx->pc + 4 + ((ctx->pc & 0xF0000000) | (inst->itype.imm<<2));
+					ctx->pc = ctx->pc + 4 + (imm_filled<<2);
 					return 1; // return early to prevent auto +4
 				}
 			} else {
@@ -488,7 +506,7 @@ int SimulateSyscall(struct virtual_mem_region* memory, struct context* ctx)
 			uint32_t addr = ctx->regs[a0];
 			int32_t word;
 			bool done = false;
-			while((word = FetchWordFromVirtualMemory(addr, memory)) && !done ) {
+			while(!done && (word = FetchWordFromVirtualMemory(addr, memory))) {
 				// read word then read chars from word
 				for(int i=0; i<4; ++i) {
 					//get the char (1 byte) from the word (4 bytes)

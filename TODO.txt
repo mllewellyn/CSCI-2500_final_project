@@ -1,0 +1,29 @@
+ -- R types --
+R ALU: ADD, ADDU, AND, OR, SUB, SUBU, XOR, SLT, SLTU, SLL, SLLV, SRA, SRL, SRLV, DIV, DIVU, MULT, MULTU
+	code: NOT complete
+	test code: NOT complete
+R move: MFHI, MFLO
+	code: done
+	test code: mostly done
+R jump: JR
+	code: done
+	test code: done
+
+  -- I types --
+I ALU: ADDI, ADDIU, ANDI, LUI, ORI, XORIc, SLTI, SLTIU,
+	code: done
+	test code: done
+I branch: BEQ, BGEZ, BGTZ, BLEZ, BLTZ, BNE, BGEZAL, BLTZAL
+	code: BGEZAL and BLTZAL NOT done
+	test code: ditto above
+I load/store: LB, LW, SB, SW
+	code: 
+	test code: 
+
+ -- J types --
+J jump: J, JAL
+	code: done
+	test code: done
+
+ -- syscall -- 
+ ?????
